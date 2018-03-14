@@ -29,7 +29,8 @@ include_directories(
 
 set(SOURCE_FILES
         main.c
-        cglm_helper.c cglm_helper.h)
+        debug.h
+        )
 
 set(APPRES_OBJS)
 if (WIN32 AND MINGW)
