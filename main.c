@@ -61,7 +61,7 @@ int main()
         glfwSwapInterval(-1);
 
         // OpenGL background color: RGBA
-        glClearColor(0.1f, 0.1f, 0.1f, 0.0f);
+        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
         do {
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
