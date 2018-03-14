@@ -63,6 +63,11 @@ int main()
         // OpenGL background color: RGBA
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
+        // OpenGL hardware Z-Buffer
+        glEnable(GL_DEPTH_TEST);
+        // Accept fragment if it's closer to camera then the former one
+        glDepthFunc(GL_LESS);
+
         do {
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
