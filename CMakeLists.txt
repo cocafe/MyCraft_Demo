@@ -18,12 +18,10 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra")
 find_package(PkgConfig REQUIRED)
 pkg_search_module(GLEW REQUIRED glew)
 pkg_search_module(GLFW REQUIRED glfw3)
-#pkg_search_module(GLM REQUIRED glm)
 
 include_directories(
         ${GLEW_INCLUDE_DIRS}
         ${GLFW_INCLUDE_DIRS}
-#        ${GLM_INCLUDE_DIRS}
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         )
 
