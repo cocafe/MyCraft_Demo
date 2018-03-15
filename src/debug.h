@@ -39,5 +39,6 @@
                                 } while (0)
 
 #define pr_err_alloc()          pr_err_func("failed to allocate memory\n")
+#define pr_err_fopen(fp, err)   pr_err_func("failed to open file %s (err: %d)\n", (fp), (err))
 
 #endif //MYCRAFT_DEMO_DEBUG_H
