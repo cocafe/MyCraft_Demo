@@ -28,8 +28,8 @@ include_directories(
         )
 
 set(SOURCE_FILES
-        main.c
-        debug.h
+        src/main.c
+        src/debug.h
         )
 
 set(APPRES_OBJS)
