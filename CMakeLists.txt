@@ -30,7 +30,10 @@ include_directories(
 set(SOURCE_FILES
         src/main.c
         src/debug.h
-        )
+        src/misc_helper.c
+        src/misc_helper.h
+        src/shader_loader.c
+        src/shader_loader.h)
 
 set(APPRES_OBJS)
 if (WIN32 AND MINGW)
