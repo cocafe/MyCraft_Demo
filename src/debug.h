@@ -38,6 +38,6 @@
                                         pr_err(__VA_ARGS__);                    \
                                 } while (0)
 
-#define pr_err_alloc()          pr_err("%s: failed to allocate memory\n", __func__)
+#define pr_err_alloc()          pr_err_func("failed to allocate memory\n")
 
 #endif //MYCRAFT_DEMO_DEBUG_H
