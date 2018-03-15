@@ -282,7 +282,7 @@ err_buf_vertex:
         return ret;
 }
 
-int main()
+int main(const int argc, const char *argv[])
 {
         GLFWwindow *window;
 
