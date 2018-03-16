@@ -57,8 +57,20 @@ target_link_libraries(MyCraft_Demo
         )
 
 if (WIN32 AND MINGW)
-    # -lGL
-    target_link_libraries(MyCraft_Demo opengl32)
+    target_link_libraries(MyCraft_Demo
+            # -lGL
+            opengl32
+            # -lmingw32
+            # mingw32
+            # -lmingwex
+            mingwex
+            # -lmsvcrt
+            # msvcrt
+            # -lmsvcr120
+            # msvcr120
+            # -lucrtbase
+            ucrtbase
+            )
 endif()
 
 message(STATUS "C Compiler: " ${CMAKE_C_COMPILER})
