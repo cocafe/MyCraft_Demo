@@ -17,7 +17,7 @@ char *file_read(const char *filepath)
 
         err = fopen_s(&fp, filepath, "r");
         if (!fp) {
-                pr_err_func("failed to open file %s (err: %d)\n", filepath, err);
+                pr_err_fopen(filepath, err);
                 return NULL;
         }
 
