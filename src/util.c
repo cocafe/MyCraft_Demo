@@ -3,8 +3,7 @@
 #include <memory.h>
 
 #include "debug.h"
-
-#include "misc_helper.h"
+#include "util.h"
 
 char *file_read(const char *filepath)
 {

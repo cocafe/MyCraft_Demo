@@ -6,7 +6,7 @@
 #include <GL/glew.h>
 
 #include "debug.h"
-#include "misc_helper.h"
+#include "util.h"
 #include "shader_loader.h"
 
 int shaders_load(GLuint *program_id, const char *vertex_shader_path,
