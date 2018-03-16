@@ -33,6 +33,9 @@ set(SOURCE_FILES
         src/util.c
         src/util.h)
 
+set(LIB_SOURCE_FILES
+        lib/lodepng.c)
+
 set(APPRES_OBJS)
 if (WIN32 AND MINGW)
     set(WINRES_OUT ${CMAKE_BINARY_DIR}/appres.o)
@@ -47,7 +50,7 @@ if (WIN32 AND MINGW)
     set(APPRES_OBJS ${WINRES_OUT})
 endif()
 
-add_executable(MyCraft_Demo ${SOURCE_FILES} ${APPRES_OBJS})
+add_executable(MyCraft_Demo ${SOURCE_FILES} ${LIB_SOURCE_FILES} ${APPRES_OBJS})
 
 target_link_libraries(MyCraft_Demo
         ${GLEW_LIBRARIES}
