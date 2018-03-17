@@ -4,7 +4,7 @@
 #include <errno.h>
 
 #include "debug.h"
-#include "util.h"
+#include "utils.h"
 
 char *file_read(const char *filepath)
 {
