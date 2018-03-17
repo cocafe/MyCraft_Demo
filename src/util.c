@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <memory.h>
+#include <errno.h>
 
 #include "debug.h"
 #include "util.h"
@@ -77,4 +78,15 @@ char *buf_alloc(size_t len)
         memset(buf, '\0', sizeof(char) * len);
 
         return buf;
+}
+
+int buf_free(char **buf)
+{
+        if (!*buf)
+                return -EINVAL;
+
+        free(*buf);
+        *buf = NULL;
+
+        return 0;
 }
