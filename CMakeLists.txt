@@ -28,10 +28,10 @@ include_directories(
 set(SOURCE_FILES
         src/main.c
         src/debug.h
-        src/shader_loader.c
-        src/shader_loader.h
-        src/util.c
-        src/util.h)
+        src/utils.c
+        src/utils.h
+        src/glutils.c
+        src/glutils.h)
 
 set(LIB_SOURCE_FILES
         lib/lodepng.c)
