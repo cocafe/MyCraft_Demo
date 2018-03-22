@@ -34,7 +34,9 @@ set(SOURCE_FILES
         src/glutils.h)
 
 set(LIB_SOURCE_FILES
-        lib/lodepng.c)
+        lib/lodepng.c
+        lib/png_loader.c
+        lib/png_loader.h)
 
 set(APPRES_OBJS)
 if (WIN32 AND MINGW)
