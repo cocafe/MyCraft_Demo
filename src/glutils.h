@@ -27,6 +27,8 @@ int shader_delete(GLuint *shader);
 GLuint program_link(GLuint shader_vertex, GLuint shader_frag);
 GLuint program_create(const char *filepath_shader_vert,
                       const char *filepath_shader_frag);
+
 GLuint texture_png_create(image_png *png, int32_t filter_level);
+int texture_delete(GLuint *texture);
 
 #endif //MYCRAFT_DEMO_GLUTILS_H

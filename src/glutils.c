@@ -225,3 +225,14 @@ GLuint texture_png_create(image_png *png, int32_t filter_level)
 
         return texture;
 }
+
+int texture_delete(GLuint *texture)
+{
+        if (!texture)
+                return -EINVAL;
+
+        glDeleteTextures(1, texture);
+        *texture = GL_TEXTURE_NONE;
+
+        return 0;
+}
