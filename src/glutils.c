@@ -9,6 +9,19 @@
 #include "utils.h"
 #include "glutils.h"
 
+GLuint buffer_create(GLfloat *data, GLsizei size)
+{
+        GLuint buffer;
+
+        glGenBuffers(1, &buffer);
+        glBindBuffer(GL_ARRAY_BUFFER, buffer);
+        glBufferData(GL_ARRAY_BUFFER, size, data, GL_STATIC_DRAW);
+
+        glBindBuffer(GL_ARRAY_BUFFER, GL_BUFFER_NONE);
+
+        return buffer;
+}
+
 GLuint shader_compile(GLenum type, const char *source)
 {
         GLuint shader;

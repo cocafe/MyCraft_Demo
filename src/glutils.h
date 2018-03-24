@@ -17,6 +17,7 @@ typedef enum texel_filter {
         NR_TEXEL_FILTER,
 } texel_filter;
 
+GLuint buffer_create(GLfloat *data, GLsizei size);
 GLuint shader_compile(GLenum type, const char *source);
 GLuint shader_load(GLenum type, const char *filepath);
 GLuint program_link(GLuint shader_vertex, GLuint shader_frag);
