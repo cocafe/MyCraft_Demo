@@ -180,6 +180,17 @@ err_vert:
         return program;
 }
 
+int program_delete(GLuint *program)
+{
+        if (!program)
+                return -EINVAL;
+
+        glDeleteProgram(*program);
+        *program = 0;
+
+        return 0;
+}
+
 GLuint texture_png_create(image_png *png, int32_t filter_level)
 {
         GLuint texture;
