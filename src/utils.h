@@ -6,6 +6,7 @@
 #define SUFFIX_TGA                      ".tga"
 #define SUFFIX_DDS                      ".dds"
 #define SUFFIX_OBJ                      ".obj"
+#define SUFFIX_GLSL                     ".glsl"
 
 char *file_read(const char *filepath);
 char *buf_alloc(size_t len);
