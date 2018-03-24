@@ -22,6 +22,17 @@ GLuint buffer_create(GLfloat *data, GLsizei size)
         return buffer;
 }
 
+int buffer_delete(GLuint *buffer)
+{
+        if (!buffer)
+                return -EINVAL;
+
+        glDeleteBuffers(1, buffer);
+        *buffer = GL_BUFFER_NONE;
+
+        return 0;
+}
+
 GLuint shader_compile(GLenum type, const char *source)
 {
         GLuint shader;
