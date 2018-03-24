@@ -150,24 +150,33 @@ err_link:
 GLuint program_create(const char *filepath_shader_vert,
                       const char *filepath_shader_frag)
 {
-        GLuint shader_vert = shader_load(GL_VERTEX_SHADER, filepath_shader_vert);
+        GLuint shader_vert;
+        GLuint shader_frag;
+        GLuint program = GL_PROGRAM_NONE;
+
+        shader_vert = shader_load(GL_VERTEX_SHADER, filepath_shader_vert);
         if (glIsShader(shader_vert) == GL_FALSE) {
                 pr_err_func("failed to load shader %s\n", filepath_shader_vert);
-                return GL_PROGRAM_NONE;
+                goto err_vert;
         }
 
-        GLuint shader_frag = shader_load(GL_FRAGMENT_SHADER, filepath_shader_frag);
+        shader_frag = shader_load(GL_FRAGMENT_SHADER, filepath_shader_frag);
         if (glIsShader(shader_frag) == GL_FALSE) {
                 pr_err_func("failed to load shader %s\n", filepath_shader_frag);
-                return GL_PROGRAM_NONE;
+                goto err_frag;
         }
 
-        GLuint program = program_link(shader_vert, shader_frag);
+        program = program_link(shader_vert, shader_frag);
         if (glIsProgram(program) == GL_FALSE) {
                 pr_err_func("failed to link program\n");
-                return GL_PROGRAM_NONE;
+                goto err_program;
         }
 
+err_program:
+        shader_delete(&shader_frag);
+err_frag:
+        shader_delete(&shader_vert);
+err_vert:
         return program;
 }
 
