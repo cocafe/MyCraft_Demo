@@ -22,6 +22,8 @@ int buffer_delete(GLuint *buffer);
 
 GLuint shader_compile(GLenum type, const char *source);
 GLuint shader_load(GLenum type, const char *filepath);
+int shader_delete(GLuint *shader);
+
 GLuint program_link(GLuint shader_vertex, GLuint shader_frag);
 GLuint program_create(const char *filepath_shader_vert,
                       const char *filepath_shader_frag);

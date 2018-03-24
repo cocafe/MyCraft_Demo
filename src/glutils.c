@@ -93,6 +93,17 @@ GLuint shader_load(GLenum type, const char *filepath)
         return shader;
 }
 
+int shader_delete(GLuint *shader)
+{
+        if (!shader)
+                return -EINVAL;
+
+        glDeleteShader(*shader);
+        *shader = GL_SHADER_NONE;
+
+        return 0;
+}
+
 GLuint program_link(GLuint shader_vertex, GLuint shader_frag)
 {
         GLuint program;
