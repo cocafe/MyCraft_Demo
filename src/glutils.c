@@ -135,3 +135,49 @@ GLuint program_create(const char *filepath_shader_vert,
 
         return program;
 }
+
+GLuint texture_png_create(image_png *png, int32_t filter_level)
+{
+        GLuint texture;
+
+        if (!png)
+                return GL_TEXTURE_NONE;
+
+        glGenTextures(1, &texture);
+        glBindTexture(GL_TEXTURE_2D, texture);
+
+        // TODO: glTexStorage2D(), mipmap level
+        glTexImage2D(GL_TEXTURE_2D, 0,
+                     (png->bpp == PNG_BPP_RGB) ? GL_RGB : GL_RGBA,
+                     png->width, png->height, 0,
+                     (png->bpp == PNG_BPP_RGB) ? GL_RGB : GL_RGBA,
+                     GL_UNSIGNED_BYTE, png->data);
+
+        switch (filter_level) {
+                default:
+                case FILTER_NEAREST:
+                        glTexParameteri(GL_TEXTURE_2D,
+                                        GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+                        glTexParameteri(GL_TEXTURE_2D,
+                                        GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+                        break;
+
+                case FILTER_LINEAR:
+                case FILTER_LINEAR_MIPMAP_LINEAR:
+                        glGenerateMipmap(GL_TEXTURE_2D);
+                        glTexParameteri(GL_TEXTURE_2D,
+                                        GL_TEXTURE_WRAP_S, GL_REPEAT);
+                        glTexParameteri(GL_TEXTURE_2D,
+                                        GL_TEXTURE_WRAP_T, GL_REPEAT);
+                        glTexParameteri(GL_TEXTURE_2D,
+                                        GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                        glTexParameteri(GL_TEXTURE_2D,
+                                        GL_TEXTURE_MIN_FILTER,
+                                        GL_LINEAR_MIPMAP_LINEAR);
+
+                        break;
+        }
+
+        return texture;
+}
