@@ -16,7 +16,7 @@ GLuint shader_compile(GLenum type, const char *source)
         GLint len;
 
         if (!source)
-                return GL_FALSE;
+                return GL_SHADER_NONE;
 
         shader = glCreateShader(type);
         glShaderSource(shader, 1, &source, NULL);
@@ -56,7 +56,7 @@ GLuint shader_load(GLenum type, const char *filepath)
 
         src = file_read(filepath);
         if (!src) {
-                return GL_FALSE;
+                return GL_SHADER_NONE;
         }
 
         shader = shader_compile(type, src);
@@ -118,19 +118,19 @@ GLuint program_create(const char *filepath_shader_vert,
         GLuint shader_vert = shader_load(GL_VERTEX_SHADER, filepath_shader_vert);
         if (glIsShader(shader_vert) == GL_FALSE) {
                 pr_err_func("failed to load shader %s\n", filepath_shader_vert);
-                return GL_FALSE;
+                return GL_PROGRAM_NONE;
         }
 
         GLuint shader_frag = shader_load(GL_FRAGMENT_SHADER, filepath_shader_frag);
         if (glIsShader(shader_frag) == GL_FALSE) {
                 pr_err_func("failed to load shader %s\n", filepath_shader_frag);
-                return GL_FALSE;
+                return GL_PROGRAM_NONE;
         }
 
         GLuint program = program_link(shader_vert, shader_frag);
         if (glIsProgram(program) == GL_FALSE) {
                 pr_err_func("failed to link program\n");
-                return GL_FALSE;
+                return GL_PROGRAM_NONE;
         }
 
         return program;
