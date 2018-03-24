@@ -9,6 +9,27 @@
 #include "utils.h"
 #include "glutils.h"
 
+GLuint vertex_array_create(void)
+{
+        GLuint vertex_array;
+
+        glGenVertexArrays(1, &vertex_array);
+        glBindVertexArray(vertex_array);
+
+        return vertex_array;
+}
+
+int vertex_array_delete(GLuint *vertex_array)
+{
+        if (!vertex_array)
+                return -EINVAL;
+
+        glDeleteVertexArrays(1, vertex_array);
+        *vertex_array = 0;
+
+        return 0;
+}
+
 GLuint buffer_create(GLfloat *data, GLsizei size)
 {
         GLuint buffer;

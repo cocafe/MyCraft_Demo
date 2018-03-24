@@ -17,6 +17,9 @@ typedef enum texel_filter {
         NR_TEXEL_FILTER,
 } texel_filter;
 
+GLuint vertex_array_create(void);
+int vertex_array_delete(GLuint *vertex_array);
+
 GLuint buffer_create(GLfloat *data, GLsizei size);
 int buffer_delete(GLuint *buffer);
 
