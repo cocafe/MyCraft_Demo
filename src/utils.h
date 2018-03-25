@@ -1,6 +1,8 @@
 #ifndef MYCRAFT_DEMO_UTIL_H
 #define MYCRAFT_DEMO_UTIL_H
 
+#define FILEPATH_MAX_LEN                (1024)
+
 #define SUFFIX_PNG                      ".png"
 #define SUFFIX_BMP                      ".bmp"
 #define SUFFIX_TGA                      ".tga"
