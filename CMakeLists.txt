@@ -15,6 +15,12 @@ endif()
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra")
 
+if (${CMAKE_BUILD_TYPE} EQUAL "Debug")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Og")
+elseif(${CMAKE_BUILD_TYPE} EQUAL "Release")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS -Ofast")
+endif()
+
 find_package(PkgConfig REQUIRED)
 pkg_search_module(GLEW REQUIRED glew)
 pkg_search_module(GLFW REQUIRED glfw3)
@@ -78,6 +84,7 @@ if (WIN32 AND MINGW)
             )
 endif()
 
+message(STATUS "CMake Config: ${CMAKE_BUILD_TYPE}")
 message(STATUS "C Compiler: " ${CMAKE_C_COMPILER})
 message(STATUS "C Flags: ${CMAKE_C_FLAGS}")
 message(STATUS "Source Directory: ${CMAKE_CURRENT_SOURCE_DIR}")
