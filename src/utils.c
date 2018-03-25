@@ -6,6 +6,16 @@
 #include "debug.h"
 #include "utils.h"
 
+int memzero(void *ptr, size_t size)
+{
+        if (!ptr)
+                return -EINVAL;
+
+        memset(ptr, 0x00, size);
+
+        return 0;
+}
+
 char *file_read(const char *filepath)
 {
         errno_t err;
