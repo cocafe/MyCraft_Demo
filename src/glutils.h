@@ -3,6 +3,7 @@
 
 #include "../lib/png_loader.h"
 
+#define GL_VAO_NONE                     (0)
 #define GL_SHADER_NONE                  (0)
 #define GL_BUFFER_NONE                  (0)
 #define GL_SAMPLER_NONE                 (0)
