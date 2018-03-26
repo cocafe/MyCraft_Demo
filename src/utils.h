@@ -10,6 +10,8 @@
 #define SUFFIX_OBJ                      ".obj"
 #define SUFFIX_GLSL                     ".glsl"
 
+typedef float vec2[2];
+
 int memzero(void *ptr, size_t size);
 char *file_read(const char *filepath);
 char *buf_alloc(size_t len);
