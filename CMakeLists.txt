@@ -39,7 +39,9 @@ set(SOURCE_FILES
         src/glutils.c
         src/glutils.h
         src/block.c
-        src/block.h)
+        src/block.h
+        src/model.c
+        src/model.h)
 
 set(LIB_SOURCE_FILES
         lib/lodepng.c
