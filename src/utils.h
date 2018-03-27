@@ -12,6 +12,10 @@
 
 typedef float vec2[2];
 
+typedef float *pvec2;
+typedef float *pvec3;
+typedef float *pvec4;
+
 int memzero(void *ptr, size_t size);
 char *file_read(const char *filepath);
 char *buf_alloc(size_t len);
