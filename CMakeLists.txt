@@ -11,6 +11,7 @@ if (WIN32 AND MINGW)
     # -mwindows: window subsystem
     # -mconsole: console subsystem
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mwindows -mconsole -static")
+#    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D__USE_MINGW_ANSI_STDIO=1")
 endif()
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra")
