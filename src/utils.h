@@ -16,5 +16,6 @@ int memzero(void *ptr, size_t size);
 char *file_read(const char *filepath);
 char *buf_alloc(size_t len);
 int buf_free(char **buf);
+void image_vertical_flip(uint8_t *data, uint32_t width, uint32_t height);
 
 #endif //MYCRAFT_DEMO_UTIL_H

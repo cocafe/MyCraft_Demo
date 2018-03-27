@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <memory.h>
 #include <errno.h>
 
@@ -99,4 +100,19 @@ int buf_free(char **buf)
         *buf = NULL;
 
         return 0;
+}
+
+void image_vertical_flip(uint8_t *data, uint32_t width, uint32_t height)
+{
+        size_t size = width * height * 4;
+        uint32_t stride = sizeof(int8_t) * width * 4;
+        uint8_t *new_data = calloc(1, sizeof(uint8_t) * size);
+
+        for (uint32_t i = 0; i < height; i++) {
+                int j = height - i - 1;
+                memcpy(new_data + j * stride, data + i * stride, stride);
+        }
+
+        memcpy(data, new_data, size);
+        free(new_data);
 }
