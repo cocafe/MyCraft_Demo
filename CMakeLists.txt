@@ -44,7 +44,9 @@ set(SOURCE_FILES
         src/model.c
         src/model.h
         src/player.c
-        src/player.h)
+        src/player.h
+        src/chunk.c
+        src/chunk.h)
 
 set(LIB_SOURCE_FILES
         lib/lodepng.c
