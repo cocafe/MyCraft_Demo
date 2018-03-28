@@ -17,6 +17,41 @@ int memzero(void *ptr, size_t size)
         return 0;
 }
 
+int memdump(void *ptr, size_t size)
+{
+        uint8_t *p = (uint8_t *)ptr;
+        int column = 8;
+
+        if (!ptr)
+                return -EINVAL;
+
+        fprintf(stdout, "     ");
+
+        for (int i = 0; i < column; ++i) {
+                fprintf(stdout, " %d ", i);
+        }
+
+        fprintf(stdout, "\n");
+
+        for (uint32_t i = 0, l = 1; i < size; i++) {
+                if (l == 0 || ((i % column) == 0)) {
+                        fprintf(stdout, "%4d ", l);
+                }
+
+                fprintf(stdout, "%02x ", p[i]);
+
+                if (((i + 1) % column) == 0) {
+                        fprintf(stdout, "\n");
+                        l++;
+                }
+
+                fflush(stdout);
+        }
+
+        return 0;
+}
+
+
 char *file_read(const char *filepath)
 {
         errno_t err;
