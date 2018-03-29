@@ -52,4 +52,22 @@ int program_delete(GLuint *program);
 GLuint texture_png_create(image_png *png, int32_t filter_level);
 int texture_delete(GLuint *texture);
 
+/**
+ * FPS Meter
+ */
+
+typedef struct fps_meter {
+        int32_t fps;
+        double  frame_time_ms;
+
+        int32_t frame_count;
+        double  frame_time_curr;
+        double  frame_time_last;
+} fps_meter;
+
+int fps_meter_init(fps_meter *fps);
+void fps_meter_count(fps_meter *fps);
+void fps_meter_measure(fps_meter *fps);
+void fps_meter_render(fps_meter *fps);
+
 #endif //MYCRAFT_DEMO_GLUTILS_H

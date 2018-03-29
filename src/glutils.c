@@ -4,6 +4,7 @@
 #include <errno.h>
 
 #include <GL/glew.h>
+#include <GLFW/glfw3.h>
 
 #include "debug.h"
 #include "utils.h"
@@ -267,4 +268,44 @@ int texture_delete(GLuint *texture)
         *texture = GL_TEXTURE_NONE;
 
         return 0;
+}
+
+
+/**
+ * FPS Meter
+ */
+
+int fps_meter_init(fps_meter *fps)
+{
+        memzero(fps, sizeof(fps_meter));
+        fps->frame_time_last = glfwGetTime();
+
+        return 0;
+}
+
+void fps_meter_count(fps_meter *fps)
+{
+        fps->frame_count++;
+}
+
+void fps_meter_measure(fps_meter *fps)
+{
+        double sec_1 = 1.0;
+        double ms_1000 = 1000.0;
+
+        fps->frame_time_curr = glfwGetTime();
+
+        if ((fps->frame_time_curr - fps->frame_time_last) >= sec_1) {
+                // FIXME: If we render fps within other thread, this needs sync?
+                fps->fps = fps->frame_count;
+                fps->frame_time_ms = ms_1000 / (double)fps->frame_count;
+
+                fps->frame_count = 0;
+                fps->frame_time_last = glfwGetTime();
+        }
+}
+
+void fps_meter_render(fps_meter *fps)
+{
+        // TODO: fps_meter_render()
 }
