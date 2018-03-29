@@ -296,3 +296,286 @@ int seqlist_append(seqlist *list, void *element)
 
         return 0;
 }
+
+/**
+ * Linked List Implementation
+ */
+
+int linklist_node_alloc(linklist_node **n)
+{
+        if (!n)
+                return -EINVAL;
+
+        *n = calloc(1, sizeof(linklist_node));
+        if (!*n) {
+                pr_err_alloc();
+                return -ENOMEM;
+        }
+
+        return 0;
+}
+
+int linklist_node_free(linklist_node **n)
+{
+        if (!n)
+                return -EINVAL;
+
+        if (!*n)
+                return -ENODATA;
+
+        free(*n);
+        *n = NULL;
+
+        return 0;
+}
+
+int linklist_node_init(linklist_node *n, linklist_node *prev,
+                       linklist_node *next, void *element, size_t element_size)
+{
+        if (!n || !element)
+                return -EINVAL;
+
+        n->data = calloc(1, element_size);
+        if (!n->data) {
+                pr_err_alloc();
+                return -ENOMEM;
+        }
+
+        // memcpy(n->data, element, sizeof(*element));
+        memcpy(n->data, element, element_size);
+
+        n->prev = prev;
+        n->next = next;
+        n->mark_delete = 0;
+
+        return 0;
+}
+
+int linklist_node_deinit(linklist_node *n)
+{
+        if (!n)
+                return -EINVAL;
+
+        if (!n->data)
+                return -ENODATA;
+
+        free(n->data);
+        n->data = NULL;
+
+        return 0;
+}
+
+int linklist_alloc(linklist **list)
+{
+        if (!list)
+                return -EINVAL;
+
+        *list = calloc(1, sizeof(linklist));
+        if (!*list) {
+                pr_err_alloc();
+                return -ENOMEM;
+        }
+
+        return 0;
+}
+
+int linklist_free(linklist **list)
+{
+        if (!list)
+                return -EINVAL;
+
+        if (!*list)
+                return -ENODATA;
+
+        free(*list);
+        *list = NULL;
+
+        return 0;
+}
+
+int linklist_init(linklist *list, size_t element_size)
+{
+        if (!list)
+                return -EINVAL;
+
+        list->element_size = element_size;
+        list->element_count = 0;
+
+        return 0;
+}
+
+int linklist_deinit(linklist *list)
+{
+        linklist_node *curr, *next;
+
+        if (!list)
+                return -EINVAL;
+
+        if (!list->head)
+                return -ENODATA;
+
+        curr = list->head;
+        while (curr) {
+                next = curr->next;
+
+                linklist_node_deinit(curr);
+                linklist_node_free(&curr);
+
+                curr = next;
+        }
+
+        return 0;
+}
+
+int linklist_append(linklist *list, void *element)
+{
+        linklist_node *curr, *node;
+        int ret;
+
+        if (!list || !element)
+                return -EINVAL;
+
+        if (list->head == NULL && list->element_count != 0) {
+                pr_err_func("program internal error\n");
+                return -EFAULT;
+        }
+
+        if (list->head == NULL) {
+                ret = linklist_node_alloc(&node);
+                if (ret)
+                        return ret;
+
+                linklist_node_init(node, NULL, NULL, element, list->element_size);
+
+                list->head = node;
+                list->element_count++;
+
+                return 0;
+        }
+
+        // Move to last valid node
+        curr = list->head;
+        while (curr->next)
+                curr = curr->next;
+
+        ret = linklist_node_alloc(&node);
+        if (ret)
+                return ret;
+
+        linklist_node_init(node, curr, NULL, element, list->element_size);
+
+        curr->next = node;
+        list->element_count++;
+
+        return 0;
+}
+
+/**
+ * linklist_delete() - delete the node address which matches
+ *
+ * single mode, delete one node in one loop
+ *
+ * @param list: pointer to linked list
+ * @param node: pointer to match and delete
+ * @return 0 on success
+ */
+int linklist_delete(linklist *list, linklist_node *node)
+{
+        linklist_node *curr, *prev, *next;
+
+        if (!list)
+                return -EINVAL;
+
+        if (!list->head)
+                return -ENODATA;
+
+        if (list->head == node) {
+                next = list->head->next;
+
+                linklist_node_deinit(list->head);
+                linklist_node_free(&list->head);
+                list->element_count--;
+
+                list->head = next;
+                if (list->head != NULL)
+                        list->head->prev = NULL;
+
+                return 0;
+        }
+
+        curr = list->head;
+        while (curr) {
+                prev = curr->prev;
+                next = curr->next;
+
+                if (curr == node) {
+                        prev->next = next;
+                        if (next != NULL)
+                                next->prev = prev;
+
+                        linklist_node_deinit(curr);
+                        linklist_node_free(&curr);
+                        list->element_count--;
+
+                        break;
+                }
+
+                curr = next;
+        }
+
+        return 0;
+}
+
+/**
+ * linklist_delete_marked() - delete all nodes that are marked delete flag
+ *
+ * batch mode, delete nodes in one loop
+ *
+ * @param list: pointer to linked list
+ * @return 0 on success
+ */
+int linklist_delete_marked(linklist *list)
+{
+        linklist_node *curr, *prev, *next;
+
+        if (!list)
+                return -EINVAL;
+
+        if (!list->head)
+                return -ENODATA;
+
+        while (list->head && list->head->mark_delete) {
+                next = list->head->next;
+
+                linklist_node_deinit(list->head);
+                linklist_node_free(&list->head);
+                list->element_count--;
+
+                list->head = next;
+                if (list->head != NULL)
+                        list->head->prev = NULL;
+        }
+
+        curr = list->head;
+        while (curr) {
+                prev = curr->prev;
+                next = curr->next;
+
+                if (curr->mark_delete) {
+                        prev->next = next;
+                        if (next != NULL)
+                                next->prev = prev;
+
+                        linklist_node_deinit(curr);
+                        linklist_node_free(&curr);
+                        list->element_count--;
+
+                        curr = prev;
+                        continue;
+                }
+
+                curr = next;
+        }
+
+        return 0;
+}

@@ -50,4 +50,42 @@ int seqlist_expand(seqlist *list, size_t count);
 int seqlist_shrink(seqlist *list);
 int seqlist_append(seqlist *list, void *element);
 
+/**
+ * Linked List Implementation
+ */
+
+typedef struct linklist_node {
+        void                    *data;
+        // TODO: We can make it custom attribute struct
+        int                     mark_delete;
+
+        struct linklist_node    *prev;
+        struct linklist_node    *next;
+} linklist_node;
+
+int linklist_node_alloc(linklist_node **n);
+int linklist_node_free(linklist_node **n);
+int linklist_node_init(linklist_node *n, linklist_node *prev,
+                       linklist_node *next, void *element, size_t element_size);
+int linklist_node_deinit(linklist_node *n);
+
+typedef struct linklist {
+        linklist_node           *head;
+        size_t                  element_size;
+        size_t                  element_count;
+
+        // FIXME: Not thread-safe
+} linklist;
+
+#define linklist_for_each_node(pos, head) \
+        for ((pos) = (head); (pos) != NULL; (pos) = (pos)->next)
+
+int linklist_alloc(linklist **list);
+int linklist_free(linklist **list);
+int linklist_init(linklist *list, size_t element_size);
+int linklist_deinit(linklist *list);
+int linklist_append(linklist *list, void *element);
+int linklist_delete(linklist *list, linklist_node *node);
+int linklist_delete_marked(linklist *list);
+
 #endif //MYCRAFT_DEMO_UTIL_H
