@@ -1,7 +1,7 @@
 #ifndef MYCRAFT_DEMO_UTIL_H
 #define MYCRAFT_DEMO_UTIL_H
 
-#define ARRAY_SIZE(a)                   (sizeof(a) / sizeof(a[0]))
+#define ARRAY_SIZE(a)                   (sizeof(a) / sizeof((a)[0]))
 
 #define FILEPATH_MAX_LEN                (1024)
 
