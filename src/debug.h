@@ -1,11 +1,11 @@
 #ifndef MYCRAFT_DEMO_DEBUG_H
 #define MYCRAFT_DEMO_DEBUG_H
 
-#define PRINT_INFO_BIT                  (1 << 0)
-#define PRINT_ERROR_BIT                 (1 << 1)
-#define PRINT_DEBUG_BIT                 (1 << 2)
+#define PRINT_INFO_BIT                  (1U << 0)
+#define PRINT_ERROR_BIT                 (1U << 1)
+#define PRINT_DEBUG_BIT                 (1U << 2)
 
-extern int g_debug_level;
+extern uint32_t g_debug_level;
 
 #define pr_info(...)            do {                                            \
                                         if (g_debug_level & PRINT_INFO_BIT) {   \
