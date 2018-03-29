@@ -5,6 +5,7 @@
 
 #include "utils.h"
 #include "glutils.h"
+#include "block.h"
 
 enum vec_attr {
         X = 0,
