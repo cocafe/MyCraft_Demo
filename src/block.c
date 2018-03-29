@@ -182,16 +182,16 @@ static block_shader *block_shader_list[] = {
 
 #define BLOCK_DIMENSION_CUBE                                    \
         .volume = {                                             \
-                .height = BLOCK_EDGE_SIZE_GLUNIT,               \
-                .length = BLOCK_EDGE_SIZE_GLUNIT,               \
-                .width = BLOCK_EDGE_SIZE_GLUNIT,                \
+                .height = BLOCK_EDGE_LEN_GLUNIT,               \
+                .length = BLOCK_EDGE_LEN_GLUNIT,               \
+                .width = BLOCK_EDGE_LEN_GLUNIT,                \
         }
 
 #define BLOCK_MODEL_CUBE                                        \
         .volume_model = {                                       \
-                .height = BLOCK_EDGE_SIZE_GLUNIT,               \
-                .length = BLOCK_EDGE_SIZE_GLUNIT,               \
-                .width = BLOCK_EDGE_SIZE_GLUNIT,                \
+                .height = BLOCK_EDGE_LEN_GLUNIT,               \
+                .length = BLOCK_EDGE_LEN_GLUNIT,               \
+                .width = BLOCK_EDGE_LEN_GLUNIT,                \
         }
 
 static block block_test = {
