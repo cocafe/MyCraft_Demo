@@ -28,4 +28,26 @@ int buf_free(char **buf);
 
 void image_vertical_flip(uint8_t *data, uint32_t width, uint32_t height);
 
+/**
+ * Sequence List Implementation
+ */
+
+#define SEQLIST_EXPAND_COUNT           (8)
+
+typedef struct seqlist {
+        void    *data;
+        size_t  element_size;
+
+        size_t  count_seqlist;
+        size_t  count_utilized;
+} seqlist;
+
+int seqlist_alloc(seqlist **list);
+int seqlist_free(seqlist **list);
+int seqlist_init(seqlist *list, size_t element_size, size_t count);
+int seqlist_deinit(seqlist *list);
+int seqlist_expand(seqlist *list, size_t count);
+int seqlist_shrink(seqlist *list);
+int seqlist_append(seqlist *list, void *element);
+
 #endif //MYCRAFT_DEMO_UTIL_H

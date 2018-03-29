@@ -151,3 +151,148 @@ void image_vertical_flip(uint8_t *data, uint32_t width, uint32_t height)
         memcpy(data, new_data, size);
         free(new_data);
 }
+
+/**
+ * Sequence List Implementation
+ */
+
+int seqlist_alloc(seqlist **list)
+{
+        if (!list)
+                return -EINVAL;
+
+        *list = calloc(1, sizeof(seqlist));
+        if (!*list) {
+                pr_err_alloc();
+                return -ENOMEM;
+        }
+
+        return 0;
+}
+
+int seqlist_free(seqlist **list)
+{
+        if (!list)
+                return -EINVAL;
+
+        if (!*list)
+                return -ENODATA;
+
+        free(*list);
+        *list = NULL;
+
+        return 0;
+}
+
+int seqlist_init(seqlist *list, size_t element_size, size_t count)
+{
+        if (!list)
+                return 0;
+
+        memzero(list, sizeof(seqlist));
+
+        list->data = calloc(count, element_size);
+        if (!list->data) {
+                pr_err_alloc();
+                return -ENOMEM;
+        }
+
+        list->element_size = element_size;
+        list->count_seqlist = count;
+        list->count_utilized = 0;
+
+        return 0;
+}
+
+int seqlist_deinit(seqlist *list)
+{
+        if (!list)
+                return -EINVAL;
+
+        if (!list->data)
+                return -ENODATA;
+
+        free(list->data);
+        memzero(list, sizeof(seqlist));
+
+        return 0;
+}
+
+int seqlist_expand(seqlist *list, size_t count)
+{
+        void *new_data;
+        size_t new_count;
+
+        if (!list)
+                return -EINVAL;
+
+        new_count = list->count_seqlist + count;
+
+        /*
+         * We do not use realloc() here, realloc() does not guarantee
+         * re-allocated memory block is clear, and we do some bytes copies
+         * in seqlist_append()
+         */
+        new_data = calloc(new_count, list->element_size * new_count);
+        if (!new_data) {
+                pr_err_alloc();
+                return -ENOMEM;
+        }
+
+        memcpy(new_data, list->data, list->element_size * list->count_utilized);
+        free(list->data);
+
+        list->data = new_data;
+        list->count_seqlist = new_count;
+
+        return 0;
+}
+
+int seqlist_shrink(seqlist *list)
+{
+        void *new_data;
+
+        if (!list)
+                return -EINVAL;
+
+        new_data = realloc(list->data, list->element_size * list->count_utilized);
+        if (!new_data) {
+                pr_err_alloc();
+                return -ENOMEM;
+        }
+
+        list->data = new_data;
+        list->count_seqlist = list->count_utilized;
+
+        return 0;
+}
+
+int seqlist_append(seqlist *list, void *element)
+{
+        uint8_t *t;
+        size_t i;
+        size_t element_size;
+        int ret;
+
+        if (!list || !element)
+                return -EINVAL;
+
+        if (list->count_utilized >= list->count_seqlist) {
+                ret = seqlist_expand(list, SEQLIST_EXPAND_COUNT);
+                if (ret) {
+                        pr_err_func("failed to expand sequence list\n");
+                        return ret;
+                }
+        }
+
+        // XXX: Memory block pointer is changed after seqlist_expand()
+        t = (uint8_t *)list->data;
+        i = list->count_utilized;
+        element_size = list->element_size;
+
+        memcpy(&t[(element_size / sizeof(uint8_t)) * i], element, element_size);
+
+        list->count_utilized++;
+
+        return 0;
+}
