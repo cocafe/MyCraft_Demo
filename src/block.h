@@ -4,7 +4,7 @@
 #include "glutils.h"
 #include "../lib/png_loader.h"
 
-#define BLOCK_EDGE_LEN_GLUNIT           (1)
+#define BLOCK_EDGE_LEN_GLUNIT           (1U)
 
 #define VERTICES_TRIANGLE               (3)
 #define VERTICES_QUAD_FACE              (2 * VERTICES_TRIANGLE)
