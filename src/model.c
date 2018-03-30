@@ -303,19 +303,13 @@ int model_cube_generate(model_cube *cube, block_attr *blk_attr, vec3 origin_gl /
 
         glm_vec_copy(origin_gl, cube->origin_gl);
 
-        // We don't need to prepare data and draw for invisible block
-        if (!blk_attr->visible)
-                return 0;
-
         for (int i = 0; i < CUBE_FACES_QUADS; ++i) {
                 cube_face *face = &(cube->faces[i]);
 
                 model_cube_face_vertex(face, blk_attr, origin_gl, i);
                 model_cube_face_uv(face, blk_attr, i);
                 model_cube_face_normal(face, origin_gl, i);
-
-                if (blk_attr->visible)
-                        model_cube_face_glattr(face, blk_attr, i);
+                model_cube_face_glattr(face, blk_attr, i);
         }
 
         model_cube_vertex_normal(cube, origin_gl);
