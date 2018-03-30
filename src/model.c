@@ -250,9 +250,9 @@ void model_cube_face_normal(cube_face *face, const vec3 origin, int idx)
                 [CUBE_RIGHT]    = {  1.0f,  0.0f,  0.0f },
         };
 
-        face->normal[X] = origin[X] + normals[idx][X];
-        face->normal[Y] = origin[Y] + normals[idx][Y];
-        face->normal[Z] = origin[Z] + normals[idx][Z];
+        face->normal[X] = normals[idx][X];
+        face->normal[Y] = normals[idx][Y];
+        face->normal[Z] = normals[idx][Z];
 }
 
 void model_cube_vertex_normal(model_cube *cube, const vec3 origin)
