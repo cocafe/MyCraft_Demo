@@ -51,6 +51,38 @@ int memdump(void *ptr, size_t size)
         return 0;
 }
 
+//int memalloc(void **ptr, size_t size)
+//{
+//        if (!ptr)
+//                return -EINVAL;
+//
+//        *ptr = calloc(1, size);
+//        if (!*ptr)
+//                return -ENOMEM;
+//
+//        return 0;
+//}
+
+void *memalloc(size_t size)
+{
+        void *ptr = calloc(1, size);
+
+        return ptr;
+}
+
+int memfree(void **ptr)
+{
+        if (!ptr)
+                return -EINVAL;
+
+        if (!*ptr)
+                return -ENODATA;
+
+        free(*ptr);
+        *ptr = NULL;
+
+        return 0;
+}
 
 char *file_read(const char *filepath)
 {

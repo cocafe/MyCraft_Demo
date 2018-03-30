@@ -20,6 +20,8 @@ typedef float *pvec4;
 
 int memzero(void *ptr, size_t size);
 int memdump(void *ptr, size_t size);
+void *memalloc(size_t size);
+int memfree(void **ptr);
 
 char *file_read(const char *filepath);
 
