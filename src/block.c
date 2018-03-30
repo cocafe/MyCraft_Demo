@@ -181,17 +181,17 @@ static block_shader *block_shader_list[] = {
         }
 
 #define BLOCK_DIMENSION_CUBE                                    \
-        .volume = {                                             \
-                .height = BLOCK_EDGE_LEN_GLUNIT,               \
-                .length = BLOCK_EDGE_LEN_GLUNIT,               \
-                .width = BLOCK_EDGE_LEN_GLUNIT,                \
+        .size = {                                               \
+                .height = BLOCK_EDGE_LEN_GLUNIT,                \
+                .length = BLOCK_EDGE_LEN_GLUNIT,                \
+                .width = BLOCK_EDGE_LEN_GLUNIT,                 \
         }
 
 #define BLOCK_MODEL_CUBE                                        \
-        .volume_model = {                                       \
-                .height = BLOCK_EDGE_LEN_GLUNIT,               \
-                .length = BLOCK_EDGE_LEN_GLUNIT,               \
-                .width = BLOCK_EDGE_LEN_GLUNIT,                \
+        .size_model = {                                         \
+                .height = BLOCK_EDGE_LEN_GLUNIT,                \
+                .length = BLOCK_EDGE_LEN_GLUNIT,                \
+                .width = BLOCK_EDGE_LEN_GLUNIT,                 \
         }
 
 static block block_test = {
@@ -346,7 +346,7 @@ static block block_glass = {
         .name = "glass",
 
         BLOCK_DIMENSION_CUBE,
-        .volume_model = {
+        .size_model = {
                 .width = 1.0f,
                 .length = 0.1f,
                 .height = 1.0f,
@@ -451,7 +451,7 @@ int block_type_dump(void)
                 pr_info("------\n");
                 pr_info("Block: %s\n", p->name);
                 pr_info("Dimensions: w: %0.2f l: %0.2f h: %0.2f\n",
-                        p->volume.width, p->volume.length, p->volume.height);
+                        p->size.width, p->size.length, p->size.height);
                 pr_info("Visible: %d\n", p->visible);
                 pr_info("Destroyable: %d\n", p->destroyable);
                 pr_info("Throughable: %d\n", p->throughable);

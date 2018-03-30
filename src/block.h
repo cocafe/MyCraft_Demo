@@ -87,8 +87,8 @@ typedef struct block_texel {
 typedef struct block {
         const char              *name;
 
-        dimension               volume;         // Volume considers in world
-        dimension               volume_model;   // Actual volume displays
+        dimension               size;         // Volume considers in world
+        dimension               size_model;   // Actual volume displays
 
         int32_t                 have_texel;
         block_texel             texels[CUBE_FACES_QUADS];

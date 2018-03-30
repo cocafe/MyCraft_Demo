@@ -33,9 +33,9 @@ typedef enum quad_vertices {
 static void model_cube_face_vertex(cube_face *face, block *block,
                                    const vec3 origin, int idx)
 {
-        float w = block->volume_model.width;
-        float h = block->volume_model.height;
-        float l = block->volume_model.length;
+        float w = block->size_model.width;
+        float h = block->size_model.height;
+        float l = block->size_model.length;
 
         switch (idx) {
                 case CUBE_FRONT:
