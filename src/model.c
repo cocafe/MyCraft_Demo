@@ -30,7 +30,7 @@ typedef enum quad_vertices {
         LL1 = V6,
 } quad_vertices;
 
-static void model_cube_face_vertex(cube_face *face, block *block,
+static void model_cube_face_vertex(cube_face *face, block_attr *block,
                                    const vec3 origin, int idx)
 {
         float w = block->size_model.width;
@@ -161,7 +161,7 @@ static void model_cube_face_vertex(cube_face *face, block *block,
         memcpy(face->vertex[LL1], face->vertex[LL], sizeof(vec3));
 }
 
-static void model_cube_face_uv(cube_face *face, block *block, int idx)
+static void model_cube_face_uv(cube_face *face, block_attr *block, int idx)
 {
         int rotate = block->texels[idx].rotation;
         int rotate_seq[][4] = {
@@ -190,7 +190,7 @@ static void model_cube_face_uv(cube_face *face, block *block, int idx)
         memcpy(face->uv[LL1], face->uv[LL], sizeof(vec2));
 }
 
-static int model_cube_face_glattr(cube_face *face, block *block, int idx)
+static int model_cube_face_glattr(cube_face *face, block_attr *block, int idx)
 {
         gl_attr *glattr = &face->glattr;
         int ret;
@@ -299,7 +299,7 @@ void model_cube_axis_set(model_cube *cube)
         memcpy(cube->axis[Z], cube->faces[CUBE_FRONT].normal, sizeof(vec3));
 }
 
-int model_cube_generate(model_cube *cube, block *block, vec3 origin /* front vector*/)
+int model_cube_generate(model_cube *cube, block_attr *block, vec3 origin /* front vector*/)
 {
         if (!cube || !block)
                 return -EINVAL;

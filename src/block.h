@@ -84,7 +84,7 @@ typedef struct block_texel {
         texel_filter    filter_level;
 } block_texel;
 
-typedef struct block {
+typedef struct block_attr {
         const char              *name;
 
         dimension               size;         // Volume considers in world
@@ -98,7 +98,7 @@ typedef struct block {
 
         int32_t                 throughable;
         int32_t                 destroyable;
-} block;
+} block_attr;
 
 extern const char *texel_filter_level[];
 extern const char *cube_face_str[];
@@ -107,7 +107,7 @@ extern const char *texel_rotate_str[];
 int block_type_init(void);
 int block_type_deinit(void);
 int block_type_dump(void);
-block *block_type_get(int idx);
+block_attr *block_type_get(int idx);
 
 int block_shader_init(void);
 int block_shader_deinit(void);

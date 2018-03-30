@@ -194,7 +194,7 @@ static block_shader *block_shader_list[] = {
                 .width = BLOCK_EDGE_LEN_GLUNIT,                 \
         }
 
-static block block_test = {
+static block_attr block_test = {
         .name = "testy",
 
         BLOCK_DIMENSION_CUBE,
@@ -212,7 +212,7 @@ static block block_test = {
         .throughable = 0,
 };
 
-static block block_air = {
+static block_attr block_air = {
         .name = "air",
 
         BLOCK_DIMENSION_CUBE,
@@ -228,7 +228,7 @@ static block block_air = {
         .throughable = 1,
 };
 
-static block block_air_wall = {
+static block_attr block_air_wall = {
         .name = "air_wall",
 
         BLOCK_DIMENSION_CUBE,
@@ -244,7 +244,7 @@ static block block_air_wall = {
         .throughable = 0,
 };
 
-static block block_bedrock = {
+static block_attr block_bedrock = {
         .name = "bedrock",
 
         BLOCK_DIMENSION_CUBE,
@@ -260,7 +260,7 @@ static block block_bedrock = {
         .throughable = 0,
 };
 
-static block block_grass = {
+static block_attr block_grass = {
         .name = "grass",
 
         BLOCK_DIMENSION_CUBE,
@@ -276,7 +276,7 @@ static block block_grass = {
         .throughable = 0,
 };
 
-static block block_grass_path = {
+static block_attr block_grass_path = {
         .name = "grass",
 
         BLOCK_DIMENSION_CUBE,
@@ -294,7 +294,7 @@ static block block_grass_path = {
         .throughable = 0,
 };
 
-static block block_dirt = {
+static block_attr block_dirt = {
         .name = "dirt",
 
         BLOCK_DIMENSION_CUBE,
@@ -310,7 +310,7 @@ static block block_dirt = {
         .throughable = 0,
 };
 
-static block block_stone = {
+static block_attr block_stone = {
         .name = "stone",
 
         BLOCK_DIMENSION_CUBE,
@@ -326,7 +326,7 @@ static block block_stone = {
         .throughable = 0,
 };
 
-static block block_tnt = {
+static block_attr block_tnt = {
         .name = "TNT",
 
         BLOCK_DIMENSION_CUBE,
@@ -342,7 +342,7 @@ static block block_tnt = {
         .throughable = 0,
 };
 
-static block block_glass = {
+static block_attr block_glass = {
         .name = "glass",
 
         BLOCK_DIMENSION_CUBE,
@@ -362,7 +362,7 @@ static block block_glass = {
         .throughable = 0,
 };
 
-static block *block_type_list[] = {
+static block_attr *block_type_list[] = {
         [BLOCK_AIR]             = &block_air,
         [BLOCK_AIRWALL]         = &block_air_wall,
         [BLOCK_BEDROCK]         = &block_bedrock,
@@ -379,8 +379,8 @@ static block *block_type_list[] = {
 int block_type_init(void)
 {
         int i;
-        block *p;
-        block **list = block_type_list;
+        block_attr *p;
+        block_attr **list = block_type_list;
 
         // TODO: We may want a texture manager to save some memory
         for (i = 0, p = list[i]; p != NULL; i++, p = list[i]) {
@@ -422,8 +422,8 @@ int block_type_init(void)
 int block_type_deinit(void)
 {
         int i;
-        block *p;
-        block **list = block_type_list;
+        block_attr *p;
+        block_attr **list = block_type_list;
 
         for (i = 0, p = list[i]; p != NULL; i++, p = list[i]) {
                 if (p->have_texel) {
@@ -442,8 +442,8 @@ int block_type_deinit(void)
 int block_type_dump(void)
 {
         int i;
-        block *p;
-        block **list = block_type_list;
+        block_attr *p;
+        block_attr **list = block_type_list;
 
         pr_info_func("\n");
 
@@ -486,7 +486,7 @@ int block_type_sanity_check()
         return 0;
 }
 
-block *block_type_get(int idx)
+block_attr *block_type_get(int idx)
 {
         if (idx >= NR_BLOCK_TYPE || idx < 0)
                 return NULL;
