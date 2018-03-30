@@ -30,12 +30,12 @@ typedef enum quad_vertices {
         LL1 = V6,
 } quad_vertices;
 
-static void model_cube_face_vertex(cube_face *face, block_attr *block,
+static void model_cube_face_vertex(cube_face *face, block_attr *blk_attr,
                                    const vec3 origin, int idx)
 {
-        float w = block->size_model.width;
-        float h = block->size_model.height;
-        float l = block->size_model.length;
+        float w = blk_attr->size_model.width;
+        float h = blk_attr->size_model.height;
+        float l = blk_attr->size_model.length;
 
         switch (idx) {
                 case CUBE_FRONT:
@@ -161,9 +161,9 @@ static void model_cube_face_vertex(cube_face *face, block_attr *block,
         memcpy(face->vertex[LL1], face->vertex[LL], sizeof(vec3));
 }
 
-static void model_cube_face_uv(cube_face *face, block_attr *block, int idx)
+static void model_cube_face_uv(cube_face *face, block_attr *blk_attr, int idx)
 {
-        int rotate = block->texels[idx].rotation;
+        int rotate = blk_attr->texels[idx].rotation;
         int rotate_seq[][4] = {
                 [TEXEL_ROTATE_0]   = { UL, UR, LL, LR },
                 [TEXEL_ROTATE_90]  = { LL, UL, LR, UR },
@@ -177,7 +177,7 @@ static void model_cube_face_uv(cube_face *face, block_attr *block, int idx)
                 [LOWER_RIGHT] = { 1.0f, 0.0f },
         };
 
-        if (!block->have_texel)
+        if (!blk_attr->have_texel)
                 return;
 
         for (int i = 0; i < NR_TEXEL_CORNER; ++i) {
@@ -190,7 +190,7 @@ static void model_cube_face_uv(cube_face *face, block_attr *block, int idx)
         memcpy(face->uv[LL1], face->uv[LL], sizeof(vec2));
 }
 
-static int model_cube_face_glattr(cube_face *face, block_attr *block, int idx)
+static int model_cube_face_glattr(cube_face *face, block_attr *blk_attr, int idx)
 {
         gl_attr *glattr = &face->glattr;
         int ret;
@@ -209,17 +209,17 @@ static int model_cube_face_glattr(cube_face *face, block_attr *block, int idx)
                 goto err_uv;
         }
 
-        if (block->have_texel) {
-                ret = glIsTexture(block->texels[idx].texture);
+        if (blk_attr->have_texel) {
+                ret = glIsTexture(blk_attr->texels[idx].texture);
                 if (ret == GL_FALSE) {
                         pr_err_func("failed to bind texture buffer\n");
                         goto err_texel;
                 }
 
-                glattr->texel = block->texels[idx].texture;
+                glattr->texel = blk_attr->texels[idx].texture;
         }
 
-        glattr->program = block_shader_get(block->shader);
+        glattr->program = block_shader_get(blk_attr->shader);
         ret = glIsProgram(glattr->program);
         if (ret == GL_FALSE) {
                 pr_err_func("invalid block shader program\n");
@@ -292,43 +292,34 @@ void model_cube_vertex_normal(model_cube *cube, const vec3 origin)
         }
 }
 
-void model_cube_axis_set(model_cube *cube)
+int model_cube_generate(model_cube *cube, block_attr *blk_attr, vec3 origin_gl /* TODO: axis */)
 {
-        memcpy(cube->axis[X], cube->faces[CUBE_RIGHT].normal, sizeof(vec3));
-        memcpy(cube->axis[Y], cube->faces[CUBE_TOP].normal, sizeof(vec3));
-        memcpy(cube->axis[Z], cube->faces[CUBE_FRONT].normal, sizeof(vec3));
-}
-
-int model_cube_generate(model_cube *cube, block_attr *block, vec3 origin /* front vector*/)
-{
-        if (!cube || !block)
+        if (!cube || !blk_attr)
                 return -EINVAL;
 
         // Clean memory first, so that we can leave
         // it blank if we don't need data in there
         memzero(cube, sizeof(model_cube));
 
-        cube->block = block;
-        glm_vec_copy(origin, cube->origin);
+        glm_vec_copy(origin_gl, cube->origin_gl);
 
         // We don't need to prepare data and draw for invisible block
-        if (!block->visible)
+        if (!blk_attr->visible)
                 return 0;
 
         for (int i = 0; i < CUBE_FACES_QUADS; ++i) {
                 cube_face *face = &(cube->faces[i]);
 
-                model_cube_face_vertex(face, block, origin, i);
-                model_cube_face_uv(face, block, i);
-                model_cube_face_normal(face, origin, i);
+                model_cube_face_vertex(face, blk_attr, origin_gl, i);
+                model_cube_face_uv(face, blk_attr, i);
+                model_cube_face_normal(face, origin_gl, i);
 
-                if (block->visible)
-                        model_cube_face_glattr(face, block, i);
+                if (blk_attr->visible)
+                        model_cube_face_glattr(face, blk_attr, i);
         }
 
-        model_cube_vertex_normal(cube, origin);
-        // TODO: Rotate axis and cube by player front vector
-        model_cube_axis_set(cube);
+        model_cube_vertex_normal(cube, origin_gl);
+        // TODO: Rotate cube upon to axis
 
         return 0;
 }
@@ -339,21 +330,19 @@ int model_cube_delete(model_cube *cube)
                 return -EINVAL;
 
         // Clean allocated glBuffers
-        if (cube->block->visible) {
-                for (int i = 0; i < CUBE_FACES_QUADS; ++i) {
-                        gl_attr *glattr = &(cube->faces[i].glattr);
+        for (int i = 0; i < CUBE_FACES_QUADS; ++i) {
+                gl_attr *glattr = &(cube->faces[i].glattr);
 
-                        // Shader programs are created in somewhere else
-                        glattr->program = GL_PROGRAM_NONE;
-                        // Texture are create in somewhere else
-                        glattr->texel = GL_TEXTURE_NONE;
+                // Shader programs are created in somewhere else
+                glattr->program = GL_PROGRAM_NONE;
+                // Texture is created in somewhere else
+                glattr->texel = GL_TEXTURE_NONE;
 
-                        if (glIsBuffer(glattr->vertex) != GL_FALSE)
-                                buffer_delete(&glattr->vertex);
+                if (glIsBuffer(glattr->vertex) != GL_FALSE)
+                        buffer_delete(&glattr->vertex);
 
-                        if (glIsBuffer(glattr->uv) != GL_FALSE)
-                                buffer_delete(&glattr->uv);
-                }
+                if (glIsBuffer(glattr->uv) != GL_FALSE)
+                        buffer_delete(&glattr->uv);
         }
 
         memzero(cube, sizeof(model_cube));
@@ -365,9 +354,6 @@ int model_cube_draw(model_cube *cube, mat4 mat_transform)
 {
         if (!cube)
                 return -EINVAL;
-
-        if (!cube->block->visible)
-                return 0;
 
         glEnable(GL_CULL_FACE);
 
@@ -384,7 +370,7 @@ int model_cube_draw(model_cube *cube, mat4 mat_transform)
 
                 glUniformMatrix4fv(glattr->mat_transform, 1, GL_FALSE, &mat_transform[0][0]);
 
-                if (cube->block->have_texel) {
+                if (glattr->texel != GL_TEXTURE_NONE) {
                         glActiveTexture(GL_TEXTURE0);
                         glBindTexture(GL_TEXTURE_2D, glattr->texel);
                         glUniform1i(glattr->sampler, 0);

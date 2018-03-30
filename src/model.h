@@ -43,17 +43,12 @@ typedef struct cube_face {
 } cube_face;
 
 typedef struct model_cube {
-        block_attr      *block;
-
-        vec3            origin; // World space
-
-        // Orientation vectors
-        vec3            axis[3];
+        vec3            origin_gl;
 
         cube_face       faces[CUBE_FACES_QUADS];
 } model_cube;
 
-int model_cube_generate(model_cube *cube, block_attr *block, vec3 origin /* front vector*/);
+int model_cube_generate(model_cube *cube, block_attr *blk_attr, vec3 origin_gl);
 int model_cube_delete(model_cube *cube);
 int model_cube_draw(model_cube *cube, mat4 mat_transform);
 
