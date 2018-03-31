@@ -14,6 +14,12 @@
 #include "glutils.h"
 #include "player.h"
 
+#define ANGEL_VERTICAL_MIN                      (M_PI / (-2))
+#define ANGEL_VERTICAL_MAX                      (M_PI / (2))
+
+#define ANGEL_HORIZONTAL_MIN                    (0.0)
+#define ANGEL_HORIZONTAL_MAX                    (M_PI * 2)
+
 int camera_init(camera *cam, camera *hint)
 {
         if (!cam || !hint)
@@ -57,7 +63,15 @@ void camera_vectors_compute(GLFWwindow *window, camera *cam, double speed)
 //                return;
 
         cam->angel_horizontal += speed * (set_x - x);
+        cam->angel_horizontal = cyclelf(cam->angel_horizontal,
+                                        ANGEL_HORIZONTAL_MIN,
+                                        ANGEL_HORIZONTAL_MAX);
+
+
         cam->angel_vertical += speed * (set_y - y);
+        cam->angel_vertical = clamplf(cam->angel_vertical,
+                                      ANGEL_VERTICAL_MIN,
+                                      ANGEL_VERTICAL_MAX);
 
         // Front vector:
         // Spherical coordinates to Cartesian coordinates conversion
