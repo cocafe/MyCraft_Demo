@@ -459,30 +459,43 @@ int linklist_deinit(linklist *list)
         return 0;
 }
 
-int linklist_append(linklist *list, void *element)
+/**
+ * linklist_append() - copy and add element to linked list
+ *
+ * @param list
+ * @param element
+ * @return copied data pointer
+ */
+void *linklist_append(linklist *list, void *element)
 {
         linklist_node *curr, *node;
+        void *data;
         int ret;
 
         if (!list || !element)
-                return -EINVAL;
+                return NULL;
 
         if (list->head == NULL && list->element_count != 0) {
                 pr_err_func("program internal error\n");
-                return -EFAULT;
+                return NULL;
         }
 
+        ret = linklist_node_alloc(&node);
+        if (ret)
+                return NULL;
+
+        ret = linklist_node_init(node, NULL, NULL,
+                                 element, list->element_size);
+        if (ret)
+                goto node_free;
+
+        data = node->data;
+
         if (list->head == NULL) {
-                ret = linklist_node_alloc(&node);
-                if (ret)
-                        return ret;
-
-                linklist_node_init(node, NULL, NULL, element, list->element_size);
-
                 list->head = node;
                 list->element_count++;
 
-                return 0;
+                goto out;
         }
 
         // Move to last valid node
@@ -490,16 +503,15 @@ int linklist_append(linklist *list, void *element)
         while (curr->next)
                 curr = curr->next;
 
-        ret = linklist_node_alloc(&node);
-        if (ret)
-                return ret;
-
-        linklist_node_init(node, curr, NULL, element, list->element_size);
-
         curr->next = node;
         list->element_count++;
 
-        return 0;
+out:
+        return data;
+
+node_free:
+        linklist_node_free(&node);
+        return NULL;
 }
 
 /**

@@ -90,7 +90,7 @@ int linklist_alloc(linklist **list);
 int linklist_free(linklist **list);
 int linklist_init(linklist *list, size_t element_size);
 int linklist_deinit(linklist *list);
-int linklist_append(linklist *list, void *element);
+void *linklist_append(linklist *list, void *element);
 int linklist_delete(linklist *list, linklist_node *node);
 int linklist_delete_marked(linklist *list);
 int linklist_is_empty(linklist *list);
