@@ -239,7 +239,7 @@ err_vert:
         return ret;
 }
 
-void model_cube_face_normal(cube_face *face, const vec3 origin, int idx)
+void model_cube_face_normal(cube_face *face, int idx)
 {
         vec3 normals[] = {
                 [CUBE_FRONT]    = {  0.0f,  0.0f,  1.0f },
@@ -308,7 +308,7 @@ int model_cube_generate(model_cube *cube, block_attr *blk_attr, vec3 origin_gl /
 
                 model_cube_face_vertex(face, blk_attr, origin_gl, i);
                 model_cube_face_uv(face, blk_attr, i);
-                model_cube_face_normal(face, origin_gl, i);
+                model_cube_face_normal(face, i);
                 model_cube_face_glattr(face, blk_attr, i);
         }
 
