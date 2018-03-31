@@ -20,7 +20,11 @@
 #  else
 #    define CGLM_EXPORT __declspec(dllimport)
 #  endif
-#  define CGLM_INLINE __forceinline
+#  if defined(__MINGW32__)
+#     define CGLM_INLINE static inline __attribute((always_inline, gnu_inline))
+#  else
+#     define CGLM_INLINE __forceinline
+#  endif
 #else
 #  define CGLM_EXPORT __attribute__((visibility("default")))
 #  define CGLM_INLINE static inline __attribute((always_inline))
