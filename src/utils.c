@@ -7,6 +7,16 @@
 #include "debug.h"
 #include "utils.h"
 
+int ivec3_equal(const ivec3 a, const ivec3 b)
+{
+        for (int i = 0; i < 3; ++i) {
+                if (a[i] != b[i])
+                        return 0;
+        }
+
+        return 1;
+}
+
 int memzero(void *ptr, size_t size)
 {
         if (!ptr)
