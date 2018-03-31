@@ -30,6 +30,10 @@ int clamp(int x, int min, int max);
 float clampf(float x, float min, float max);
 double clamplf(double x, double min, double max);
 
+int cycle(int x, int bound_lower, int bound_upper);
+float cyclef(float x, float bound_lower, float bound_upper);
+double cyclelf(double x, double bound_lower, double bound_upper);
+
 int memzero(void *ptr, size_t size);
 int memdump(void *ptr, size_t size);
 void *memalloc(size_t size);

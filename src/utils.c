@@ -55,6 +55,44 @@ double clamplf(double x, double min, double max)
         return x;
 }
 
+/**
+ * cycle() - set value to inverse bound when exceeds
+ *
+ * @param x: value to set
+ * @param bound_lower: lower bound
+ * @param bound_upper: upper bound
+ * @return computed value
+ */
+int cycle(int x, int bound_lower, int bound_upper)
+{
+        if (x < bound_lower)
+                x = bound_upper;
+        else if (x > bound_upper)
+                x = bound_lower;
+
+        return 0;
+}
+
+float cyclef(float x, float bound_lower, float bound_upper)
+{
+        if (x < bound_lower)
+                x = bound_upper;
+        else if (x > bound_upper)
+                x = bound_lower;
+
+        return 0;
+}
+
+double cyclelf(double x, double bound_lower, double bound_upper)
+{
+        if (x < bound_lower)
+                x = bound_upper;
+        else if (x > bound_upper)
+                x = bound_lower;
+
+        return x;
+}
+
 int memzero(void *ptr, size_t size)
 {
         if (!ptr)
