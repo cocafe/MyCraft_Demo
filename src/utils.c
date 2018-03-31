@@ -440,6 +440,8 @@ int linklist_init(linklist *list, size_t element_size)
         if (!list)
                 return -EINVAL;
 
+        memzero(list, sizeof(linklist));
+
         list->element_size = element_size;
         list->element_count = 0;
 
@@ -465,6 +467,8 @@ int linklist_deinit(linklist *list)
 
                 curr = next;
         }
+
+        memzero(list, sizeof(linklist));
 
         return 0;
 }
