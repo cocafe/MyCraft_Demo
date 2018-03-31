@@ -30,6 +30,44 @@ typedef enum quad_vertices {
         LL1 = V6,
 } quad_vertices;
 
+int model_cube_init(model_cube *cube, vec3 origin_gl)
+{
+        if (!cube)
+                return -EINVAL;
+
+        memzero(cube, sizeof(model_cube));
+        memcpy(cube->origin_gl, origin_gl, sizeof(vec3));
+
+        return 0;
+}
+
+int model_cube_deinit(model_cube *cube)
+{
+        if (!cube)
+                return -EINVAL;
+
+        // Clean allocated glBuffers
+        for (int i = 0; i < CUBE_FACES_QUADS; ++i) {
+                gl_attr *glattr = &(cube->faces[i].glattr);
+
+                // Shader programs are created in somewhere else
+                glattr->program = GL_PROGRAM_NONE;
+                // Texture is created in somewhere else
+                glattr->texel = GL_TEXTURE_NONE;
+
+                if (glIsBuffer(glattr->vertex) != GL_FALSE)
+                        buffer_delete(&glattr->vertex);
+
+                if (glIsBuffer(glattr->uv) != GL_FALSE)
+                        buffer_delete(&glattr->uv);
+        }
+
+        memzero(cube, sizeof(model_cube));
+
+        return 0;
+}
+
+
 static void model_cube_face_vertex(cube_face *face, block_attr *blk_attr,
                                    const vec3 origin, int idx)
 {
@@ -292,54 +330,22 @@ void model_cube_vertex_normal(model_cube *cube, const vec3 origin)
         }
 }
 
-int model_cube_generate(model_cube *cube, block_attr *blk_attr, vec3 origin_gl /* TODO: axis */)
+int model_cube_generate(model_cube *cube, block_attr *blk_attr)
 {
         if (!cube || !blk_attr)
                 return -EINVAL;
 
-        // Clean memory first, so that we can leave
-        // it blank if we don't need data in there
-        memzero(cube, sizeof(model_cube));
-
-        glm_vec_copy(origin_gl, cube->origin_gl);
-
         for (int i = 0; i < CUBE_FACES_QUADS; ++i) {
                 cube_face *face = &(cube->faces[i]);
 
-                model_cube_face_vertex(face, blk_attr, origin_gl, i);
+                model_cube_face_vertex(face, blk_attr, cube->origin_gl, i);
                 model_cube_face_uv(face, blk_attr, i);
                 model_cube_face_normal(face, i);
                 model_cube_face_glattr(face, blk_attr, i);
         }
 
-        model_cube_vertex_normal(cube, origin_gl);
+        model_cube_vertex_normal(cube, cube->origin_gl);
         // TODO: Rotate cube upon to axis
-
-        return 0;
-}
-
-int model_cube_delete(model_cube *cube)
-{
-        if (!cube)
-                return -EINVAL;
-
-        // Clean allocated glBuffers
-        for (int i = 0; i < CUBE_FACES_QUADS; ++i) {
-                gl_attr *glattr = &(cube->faces[i].glattr);
-
-                // Shader programs are created in somewhere else
-                glattr->program = GL_PROGRAM_NONE;
-                // Texture is created in somewhere else
-                glattr->texel = GL_TEXTURE_NONE;
-
-                if (glIsBuffer(glattr->vertex) != GL_FALSE)
-                        buffer_delete(&glattr->vertex);
-
-                if (glIsBuffer(glattr->uv) != GL_FALSE)
-                        buffer_delete(&glattr->uv);
-        }
-
-        memzero(cube, sizeof(model_cube));
 
         return 0;
 }

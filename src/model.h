@@ -48,8 +48,9 @@ typedef struct model_cube {
         cube_face       faces[CUBE_FACES_QUADS];
 } model_cube;
 
-int model_cube_generate(model_cube *cube, block_attr *blk_attr, vec3 origin_gl);
-int model_cube_delete(model_cube *cube);
+int model_cube_init(model_cube *cube, vec3 origin_gl);
+int model_cube_deinit(model_cube *cube);
+int model_cube_generate(model_cube *cube, block_attr *blk_attr);
 int model_cube_draw(model_cube *cube, mat4 mat_transform);
 
 #endif //MYCRAFT_DEMO_MODEL_H
