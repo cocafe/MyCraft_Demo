@@ -17,6 +17,44 @@ int ivec3_equal(const ivec3 a, const ivec3 b)
         return 1;
 }
 
+/**
+ * clamp() - restrict value to given range [min, max]
+ *
+ * @param x: value to clamp
+ * @param min: min value
+ * @param max: max value
+ * @return clamped value
+ */
+int clamp(int x, int min, int max)
+{
+        if (x < min)
+                x = min;
+        else if (x > max)
+                x = max;
+
+        return x;
+}
+
+float clampf(float x, float min, float max)
+{
+        if (x < min)
+                x = min;
+        else if (x > max)
+                x = max;
+
+        return x;
+}
+
+double clamplf(double x, double min, double max)
+{
+        if (x < min)
+                x = min;
+        else if (x > max)
+                x = max;
+
+        return x;
+}
+
 int memzero(void *ptr, size_t size)
 {
         if (!ptr)

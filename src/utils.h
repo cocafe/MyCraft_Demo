@@ -26,6 +26,10 @@ typedef float *pvec4;
 
 int ivec3_equal(const ivec3 a, const ivec3 b);
 
+int clamp(int x, int min, int max);
+float clampf(float x, float min, float max);
+double clamplf(double x, double min, double max);
+
 int memzero(void *ptr, size_t size);
 int memdump(void *ptr, size_t size);
 void *memalloc(size_t size);
