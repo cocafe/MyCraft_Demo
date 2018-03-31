@@ -448,7 +448,6 @@ int block_type_dump(void)
         pr_info_func("\n");
 
         for (i = 0, p = list[i]; p != NULL; i++, p = list[i]) {
-                pr_info("------\n");
                 pr_info("Block: %s\n", p->name);
                 pr_info("Dimensions: w: %0.2f l: %0.2f h: %0.2f\n",
                         p->size.width, p->size.length, p->size.height);
@@ -473,7 +472,7 @@ int block_type_dump(void)
                                         texel_filter_level[texel->filter_level]);
                         }
                 }
-
+                pr_info("------\n");
         }
 
         return 0;
