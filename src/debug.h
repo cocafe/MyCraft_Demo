@@ -1,16 +1,24 @@
 #ifndef MYCRAFT_DEMO_DEBUG_H
 #define MYCRAFT_DEMO_DEBUG_H
 
+#include <stdio.h>
+#include <stdint.h>
+
 #define PRINT_INFO_BIT                  (1U << 0)
 #define PRINT_ERROR_BIT                 (1U << 1)
 #define PRINT_DEBUG_BIT                 (1U << 2)
 
 extern uint32_t g_debug_level;
 
+// fflush() may slow down program
+extern uint32_t g_debug_sync;
+
 #define pr_info(...)            do {                                            \
                                         if (g_debug_level & PRINT_INFO_BIT) {   \
                                                 fprintf(stdout, __VA_ARGS__);   \
-                                                fflush(stdout);                 \
+                                                                                \
+                                                if (g_debug_sync)               \
+                                                        fflush(stdout);         \
                                         }                                       \
                                 } while (0)
 
@@ -22,7 +30,9 @@ extern uint32_t g_debug_level;
 #define pr_debug(...)           do {                                            \
                                         if (g_debug_level & PRINT_DEBUG_BIT) {  \
                                                 fprintf(stdout, __VA_ARGS__);   \
-                                                fflush(stdout);                 \
+                                                                                \
+                                                if (g_debug_sync)               \
+                                                        fflush(stdout);         \
                                         }                                       \
                                 } while (0)
 
@@ -34,7 +44,9 @@ extern uint32_t g_debug_level;
 #define pr_err(...)             do {                                            \
                                         if (g_debug_level & PRINT_ERROR_BIT) {  \
                                                 fprintf(stderr, __VA_ARGS__);   \
-                                                fflush(stderr);                 \
+                                                                                \
+                                                if (g_debug_sync)               \
+                                                        fflush(stderr);         \
                                         }                                       \
                                 } while (0)
 

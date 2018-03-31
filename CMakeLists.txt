@@ -34,6 +34,7 @@ include_directories(
 
 set(SOURCE_FILES
         src/main.c
+        src/debug.c
         src/debug.h
         src/utils.c
         src/utils.h
