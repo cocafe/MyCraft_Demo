@@ -514,6 +514,14 @@ node_free:
         return NULL;
 }
 
+static inline void __linklist_node_delete(linklist *list, linklist_node **n)
+{
+        linklist_node_deinit(*n);
+        linklist_node_free(n);
+
+        list->element_count--;
+}
+
 /**
  * linklist_delete() - delete the node address which matches
  *
@@ -536,9 +544,7 @@ int linklist_delete(linklist *list, linklist_node *node)
         if (list->head == node) {
                 next = list->head->next;
 
-                linklist_node_deinit(list->head);
-                linklist_node_free(&list->head);
-                list->element_count--;
+                __linklist_node_delete(list, &list->head);
 
                 list->head = next;
                 if (list->head != NULL)
@@ -557,9 +563,7 @@ int linklist_delete(linklist *list, linklist_node *node)
                         if (next != NULL)
                                 next->prev = prev;
 
-                        linklist_node_deinit(curr);
-                        linklist_node_free(&curr);
-                        list->element_count--;
+                        __linklist_node_delete(list, &curr);
 
                         break;
                 }
@@ -591,9 +595,7 @@ int linklist_delete_marked(linklist *list)
         while (list->head && list->head->mark_delete) {
                 next = list->head->next;
 
-                linklist_node_deinit(list->head);
-                linklist_node_free(&list->head);
-                list->element_count--;
+                __linklist_node_delete(list, &list->head);
 
                 list->head = next;
                 if (list->head != NULL)
@@ -610,9 +612,7 @@ int linklist_delete_marked(linklist *list)
                         if (next != NULL)
                                 next->prev = prev;
 
-                        linklist_node_deinit(curr);
-                        linklist_node_free(&curr);
-                        list->element_count--;
+                        __linklist_node_delete(list, &curr);
 
                         curr = prev;
                         continue;
