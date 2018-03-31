@@ -18,7 +18,7 @@ endif()
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra")
 
 if (${CMAKE_BUILD_TYPE} EQUAL "Debug")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Og")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Og -ggdb -g3")
 elseif(${CMAKE_BUILD_TYPE} EQUAL "Release")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS -Ofast")
 endif()
