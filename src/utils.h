@@ -15,12 +15,14 @@
 typedef float vec2[2];
 
 typedef int32_t ivec2[2];
-//typedef int32_t ivec3[3];     // cglm has defined one
+typedef int32_t ivec3[3];     // cglm has defined one
 typedef int32_t ivec4[4];
 
 typedef float *pvec2;
 typedef float *pvec3;
 typedef float *pvec4;
+
+int ivec3_equal(const ivec3 a, const ivec3 b);
 
 int memzero(void *ptr, size_t size);
 int memdump(void *ptr, size_t size);
