@@ -1,6 +1,8 @@
 #ifndef MYCRAFT_DEMO_UTIL_H
 #define MYCRAFT_DEMO_UTIL_H
 
+#include <cglm/cglm.h>
+
 #define ARRAY_SIZE(a)                   (sizeof(a) / sizeof((a)[0]))
 
 #define FILEPATH_MAX_LEN                (1024)
@@ -15,7 +17,7 @@
 typedef float vec2[2];
 
 typedef int32_t ivec2[2];
-typedef int32_t ivec3[3];     // cglm has defined one
+//typedef int32_t ivec3[3];     // cglm has defined one
 typedef int32_t ivec4[4];
 
 typedef float *pvec2;
