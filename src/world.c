@@ -3,7 +3,8 @@
 #include <stdint.h>
 #include <errno.h>
 
+#include <GL/glew.h>
+
 #include "model.h"
 #include "utils.h"
-#include "glutils.h"
-#include "chunk.h"
+#include "world.h"
