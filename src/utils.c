@@ -611,3 +611,23 @@ int linklist_delete_marked(linklist *list)
 
         return 0;
 }
+
+/**
+ * linklist_is_empty() - check list whether is empty
+ *
+ * @param list: pointer to linked list
+ * @return 1 on empty
+ */
+int linklist_is_empty(linklist *list)
+{
+        if (!list)
+                return 1;
+
+        if (!list->head)
+                return 1;
+
+        if (list->element_count == 0)
+                return 1;
+
+        return 0;
+}
