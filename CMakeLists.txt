@@ -75,8 +75,6 @@ add_executable(MyCraft_Demo ${SOURCE_FILES} ${LIB_SOURCE_FILES} ${APPRES_OBJS})
 target_link_libraries(MyCraft_Demo
         ${GLEW_LIBRARIES}
         ${GLFW_LIBRARIES}
-#        ${CMAKE_CURRENT_SOURCE_DIR}/lib/libcglm.dll.a
-#        ${CMAKE_CURRENT_SOURCE_DIR}/lib/libcglm.a
         )
 
 if (WIN32 AND MINGW)
