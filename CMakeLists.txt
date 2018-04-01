@@ -77,6 +77,11 @@ target_link_libraries(MyCraft_Demo
         ${GLFW_LIBRARIES}
         )
 
+target_link_libraries(MyCraft_Demo
+        # -lpthread
+        pthread
+        )
+
 if (WIN32 AND MINGW)
     target_link_libraries(MyCraft_Demo
             # -lGL
