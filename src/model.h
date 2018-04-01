@@ -24,15 +24,7 @@ enum vertices {
         V6,
 };
 
-/* FIXME: The data size of cube vertex attributes are too large.
- * For example, 256^3 cubes can take up around 16GB memory
- * To reduce data size saves to disk, we can generate vertices
- * at runtime, but runtime memory consumption is still high.
- * Need optimizations.
- */
-typedef struct cube_face {
-        // TODO:        VBOs
-
+typedef struct face_block {
         vec3            vertex[VERTICES_QUAD_FACE];
         vec3            vertex_normal[VERTICES_QUAD_FACE];
         vec2            uv[VERTICES_QUAD_FACE];
@@ -40,17 +32,17 @@ typedef struct cube_face {
         vec3            normal;
 
         gl_attr         glattr;
-} cube_face;
+} face_block;
 
-typedef struct model_cube {
+typedef struct model_block {
         vec3            origin_gl;
 
-        cube_face       faces[CUBE_FACES_QUADS];
-} model_cube;
+        face_block       faces[CUBE_FACES_QUADS];
+} model_block;
 
-int model_cube_init(model_cube *cube, vec3 origin_gl);
-int model_cube_deinit(model_cube *cube);
-int model_cube_generate(model_cube *cube, block_attr *blk_attr);
-int model_cube_draw(model_cube *cube, mat4 mat_transform);
+int model_block_init(model_block *cube, vec3 origin_gl);
+int model_block_deinit(model_block *cube);
+int model_block_generate(model_block *cube, block_attr *blk_attr);
+int model_block_draw(model_block *cube, mat4 mat_transform);
 
 #endif //MYCRAFT_DEMO_MODEL_H
