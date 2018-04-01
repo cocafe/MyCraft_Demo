@@ -47,7 +47,7 @@ int block_model_deinit(block_model *mesh)
                 return -EINVAL;
 
         // Clean allocated glBuffers
-        for (int i = 0; i < CUBE_FACES_QUADS; ++i) {
+        for (int i = 0; i < CUBE_QUAD_FACES; ++i) {
                 gl_attr *glattr = &(mesh->faces[i].glattr);
 
                 // Shader programs are created in somewhere else
@@ -297,7 +297,7 @@ void model_cube_vertex_normal(block_model *cube, const vec3 origin)
 {
         vec3 face_normals[3];
 
-        for (int i = 0; i < CUBE_FACES_QUADS; ++i) {
+        for (int i = 0; i < CUBE_QUAD_FACES; ++i) {
                 block_face *face = &(cube->faces[i]);
 
                 for (int j = 0; j < VERTICES_QUAD_FACE; ++j) {
@@ -335,7 +335,7 @@ int block_model_generate(block_model *mesh, block_attr *blk_attr)
         if (!mesh || !blk_attr)
                 return -EINVAL;
 
-        for (int i = 0; i < CUBE_FACES_QUADS; ++i) {
+        for (int i = 0; i < CUBE_QUAD_FACES; ++i) {
                 block_face *face = &(mesh->faces[i]);
 
                 model_cube_face_vertex(face, blk_attr, mesh->origin_gl, i);
@@ -362,7 +362,7 @@ int block_model_draw(block_model *mesh, mat4 mat_transform)
 
         glUseProgram(GL_PROGRAM_NONE);
 
-        for (int i = 0; i < CUBE_FACES_QUADS; ++i) {
+        for (int i = 0; i < CUBE_QUAD_FACES; ++i) {
                 block_face *face = &(mesh->faces[i]);
                 gl_attr *glattr = &face->glattr;
 

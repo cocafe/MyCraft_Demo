@@ -37,7 +37,7 @@ typedef struct block_face {
 typedef struct block_model {
         vec3            origin_gl;
 
-        block_face      faces[CUBE_FACES_QUADS];
+        block_face      faces[CUBE_QUAD_FACES];
 } block_model;
 
 int block_model_init(block_model *mesh, vec3 origin_gl);
