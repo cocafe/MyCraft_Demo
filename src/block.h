@@ -9,7 +9,7 @@
 #define VERTICES_TRIANGLE               (3)
 #define VERTICES_QUAD_FACE              (2 * VERTICES_TRIANGLE)
 
-#define CUBE_FACES_QUADS                (6)
+#define CUBE_QUAD_FACES                 (6)
 
 #define BLOCK_SHADER_FOLDER             "resource/shader/"
 #define BLOCK_SHADER_FILE(file)         (BLOCK_SHADER_FOLDER file SUFFIX_GLSL)
@@ -91,7 +91,7 @@ typedef struct block_attr {
         dimension               size_model;   // Actual volume displays
 
         int32_t                 have_texel;
-        block_texel             texels[CUBE_FACES_QUADS];
+        block_texel             texels[CUBE_QUAD_FACES];
 
         int32_t                 visible;        // If invisible, shader is useless
         block_shader_type       shader;
