@@ -5,6 +5,14 @@
 
 #define ARRAY_SIZE(a)                   (sizeof(a) / sizeof((a)[0]))
 
+#if defined(__GNUC__)
+#define likely(x)                       __builtin_expect((x), 1)
+#define unlikely(x)                     __builtin_expect((x), 0)
+#else
+#define likely(x)                       (x)
+#define unlikely(x)                     (x)
+#endif
+
 #define FILEPATH_MAX_LEN                (1024)
 
 #define SUFFIX_PNG                      ".png"
