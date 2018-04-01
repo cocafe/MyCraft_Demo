@@ -24,7 +24,7 @@ enum vertices {
         V6,
 };
 
-typedef struct face_block {
+typedef struct block_face {
         vec3            vertex[VERTICES_QUAD_FACE];
         vec3            vertex_normal[VERTICES_QUAD_FACE];
         vec2            uv[VERTICES_QUAD_FACE];
@@ -32,17 +32,17 @@ typedef struct face_block {
         vec3            normal;
 
         gl_attr         glattr;
-} face_block;
+} block_face;
 
-typedef struct model_block {
+typedef struct block_model {
         vec3            origin_gl;
 
-        face_block       faces[CUBE_FACES_QUADS];
-} model_block;
+        block_face      faces[CUBE_FACES_QUADS];
+} block_model;
 
-int model_block_init(model_block *cube, vec3 origin_gl);
-int model_block_deinit(model_block *cube);
-int model_block_generate(model_block *cube, block_attr *blk_attr);
-int model_block_draw(model_block *cube, mat4 mat_transform);
+int block_model_init(block_model *mesh, vec3 origin_gl);
+int block_model_deinit(block_model *mesh);
+int block_model_generate(block_model *mesh, block_attr *blk_attr);
+int block_model_draw(block_model *mesh, mat4 mat_transform);
 
 #endif //MYCRAFT_DEMO_MODEL_H

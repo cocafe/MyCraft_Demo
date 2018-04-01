@@ -30,25 +30,25 @@ typedef enum quad_vertices {
         LL1 = V6,
 } quad_vertices;
 
-int model_block_init(model_block *cube, vec3 origin_gl)
+int block_model_init(block_model *mesh, vec3 origin_gl)
 {
-        if (!cube)
+        if (!mesh)
                 return -EINVAL;
 
-        memzero(cube, sizeof(model_block));
-        memcpy(cube->origin_gl, origin_gl, sizeof(vec3));
+        memzero(mesh, sizeof(block_model));
+        memcpy(mesh->origin_gl, origin_gl, sizeof(vec3));
 
         return 0;
 }
 
-int model_block_deinit(model_block *cube)
+int block_model_deinit(block_model *mesh)
 {
-        if (!cube)
+        if (!mesh)
                 return -EINVAL;
 
         // Clean allocated glBuffers
         for (int i = 0; i < CUBE_FACES_QUADS; ++i) {
-                gl_attr *glattr = &(cube->faces[i].glattr);
+                gl_attr *glattr = &(mesh->faces[i].glattr);
 
                 // Shader programs are created in somewhere else
                 glattr->program = GL_PROGRAM_NONE;
@@ -62,13 +62,13 @@ int model_block_deinit(model_block *cube)
                         buffer_delete(&glattr->uv);
         }
 
-        memzero(cube, sizeof(model_block));
+        memzero(mesh, sizeof(block_model));
 
         return 0;
 }
 
 
-static void model_cube_face_vertex(face_block *face, block_attr *blk_attr,
+static void model_cube_face_vertex(block_face *face, block_attr *blk_attr,
                                    const vec3 origin, int idx)
 {
         float w = blk_attr->size_model.width;
@@ -199,7 +199,7 @@ static void model_cube_face_vertex(face_block *face, block_attr *blk_attr,
         memcpy(face->vertex[LL1], face->vertex[LL], sizeof(vec3));
 }
 
-static void model_cube_face_uv(face_block *face, block_attr *blk_attr, int idx)
+static void model_cube_face_uv(block_face *face, block_attr *blk_attr, int idx)
 {
         int rotate = blk_attr->texels[idx].rotation;
         int rotate_seq[][4] = {
@@ -228,7 +228,7 @@ static void model_cube_face_uv(face_block *face, block_attr *blk_attr, int idx)
         memcpy(face->uv[LL1], face->uv[LL], sizeof(vec2));
 }
 
-static int model_cube_face_glattr(face_block *face, block_attr *blk_attr, int idx)
+static int model_cube_face_glattr(block_face *face, block_attr *blk_attr, int idx)
 {
         gl_attr *glattr = &face->glattr;
         int ret;
@@ -277,7 +277,7 @@ err_vert:
         return ret;
 }
 
-void model_cube_face_normal(face_block *face, int idx)
+void model_cube_face_normal(block_face *face, int idx)
 {
         vec3 normals[] = {
                 [CUBE_FRONT]    = {  0.0f,  0.0f,  1.0f },
@@ -293,12 +293,12 @@ void model_cube_face_normal(face_block *face, int idx)
         face->normal[Z] = normals[idx][Z];
 }
 
-void model_cube_vertex_normal(model_block *cube, const vec3 origin)
+void model_cube_vertex_normal(block_model *cube, const vec3 origin)
 {
         vec3 face_normals[3];
 
         for (int i = 0; i < CUBE_FACES_QUADS; ++i) {
-                face_block *face = &(cube->faces[i]);
+                block_face *face = &(cube->faces[i]);
 
                 for (int j = 0; j < VERTICES_QUAD_FACE; ++j) {
                         if ((face->vertex[j][X] - origin[X]) > 0) {
@@ -330,29 +330,29 @@ void model_cube_vertex_normal(model_block *cube, const vec3 origin)
         }
 }
 
-int model_block_generate(model_block *cube, block_attr *blk_attr)
+int block_model_generate(block_model *mesh, block_attr *blk_attr)
 {
-        if (!cube || !blk_attr)
+        if (!mesh || !blk_attr)
                 return -EINVAL;
 
         for (int i = 0; i < CUBE_FACES_QUADS; ++i) {
-                face_block *face = &(cube->faces[i]);
+                block_face *face = &(mesh->faces[i]);
 
-                model_cube_face_vertex(face, blk_attr, cube->origin_gl, i);
+                model_cube_face_vertex(face, blk_attr, mesh->origin_gl, i);
                 model_cube_face_uv(face, blk_attr, i);
                 model_cube_face_normal(face, i);
                 model_cube_face_glattr(face, blk_attr, i);
         }
 
-        model_cube_vertex_normal(cube, cube->origin_gl);
-        // TODO: Rotate cube upon to axis
+        model_cube_vertex_normal(mesh, mesh->origin_gl);
+        // TODO: Rotate mesh upon to axis
 
         return 0;
 }
 
-int model_block_draw(model_block *cube, mat4 mat_transform)
+int block_model_draw(block_model *mesh, mat4 mat_transform)
 {
-        if (!cube)
+        if (!mesh)
                 return -EINVAL;
 
         glEnable(GL_CULL_FACE);
@@ -363,7 +363,7 @@ int model_block_draw(model_block *cube, mat4 mat_transform)
         glUseProgram(GL_PROGRAM_NONE);
 
         for (int i = 0; i < CUBE_FACES_QUADS; ++i) {
-                face_block *face = &(cube->faces[i]);
+                block_face *face = &(mesh->faces[i]);
                 gl_attr *glattr = &face->glattr;
 
                 glUseProgram(glattr->program);
