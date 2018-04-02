@@ -22,6 +22,10 @@
 #define SUFFIX_OBJ                      ".obj"
 #define SUFFIX_GLSL                     ".glsl"
 
+#define VERTICES_TRIANGLE               (3)
+#define VERTICES_QUAD                   (4)
+#define VERTICES_TRIANGULATE_QUAD       (2 * VERTICES_TRIANGLE)
+
 enum vec_attr {
         X = 0,
         Y,
