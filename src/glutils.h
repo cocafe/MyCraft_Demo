@@ -26,12 +26,12 @@ typedef struct gl_attr {
         GLuint  texel;          // texture
         GLint   sampler;        // uniform
         GLint   mat_transform;  // uniform
+        GLuint  buffer_1;
+        GLuint  buffer_2;
+        GLuint  buffer_3;
         GLint   uniform_1;
         GLint   uniform_2;
         GLint   uniform_3;
-        GLint   uniform_4;
-        GLint   uniform_5;
-        GLint   uniform_6;
 } gl_attr;
 
 GLuint vertex_array_create(void);
