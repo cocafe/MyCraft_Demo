@@ -7,7 +7,8 @@
 #define BLOCK_EDGE_LEN_GLUNIT           (1U)
 
 #define VERTICES_TRIANGLE               (3)
-#define VERTICES_QUAD_FACE              (2 * VERTICES_TRIANGLE)
+#define VERTICES_QUAD                   (4)
+#define VERTICES_TRIANGULATE_QUAD       (2 * VERTICES_TRIANGLE)
 
 #define CUBE_QUAD_FACES                 (6)
 
