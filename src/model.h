@@ -15,7 +15,7 @@ enum vec_attr {
         NR_VEC_IDX,
 };
 
-enum vertices {
+enum vertex_idx {
         V1 = 0,
         V2,
         V3,
