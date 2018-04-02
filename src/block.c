@@ -44,142 +44,6 @@ static block_shader *block_shader_list[] = {
         NULL,
 };
 
-#define BLOCK_TEXTURE_NONE                                      \
-        .texels = {                                             \
-                [CUBE_FRONT] = {                                \
-                        .filepath = NULL,                       \
-                        .texture  = GL_TEXTURE_NONE,            \
-                        .rotation = TEXEL_ROTATE_0,             \
-                },                                              \
-                [CUBE_BACK] = {                                 \
-                        .filepath = NULL,                       \
-                        .texture  = GL_TEXTURE_NONE,            \
-                        .rotation = TEXEL_ROTATE_0,             \
-                },                                              \
-                [CUBE_TOP] = {                                  \
-                        .filepath = NULL,                       \
-                        .texture  = GL_TEXTURE_NONE,            \
-                        .rotation = TEXEL_ROTATE_0,             \
-                },                                              \
-                [CUBE_BOTTOM] = {                               \
-                        .filepath = NULL,                       \
-                        .texture  = GL_TEXTURE_NONE,            \
-                        .rotation = TEXEL_ROTATE_0,             \
-                },                                              \
-                [CUBE_LEFT] = {                                 \
-                        .filepath = NULL,                       \
-                        .texture  = GL_TEXTURE_NONE,            \
-                        .rotation = TEXEL_ROTATE_0,             \
-                },                                              \
-                [CUBE_RIGHT] = {                                \
-                        .filepath = NULL,                       \
-                        .texture  = GL_TEXTURE_NONE,            \
-                        .rotation = TEXEL_ROTATE_0,             \
-                },                                              \
-        }
-
-#define BLOCK_TEXTURE_SINGLE(file)                              \
-        .texels = {                                             \
-                [CUBE_FRONT] = {                                \
-                        .filepath = BLOCK_TEXTURE_FILE(file),   \
-                        .texture  = GL_TEXTURE_NONE,            \
-                        .rotation = TEXEL_ROTATE_0,             \
-                },                                              \
-                [CUBE_BACK] = {                                 \
-                        .filepath = BLOCK_TEXTURE_FILE(file),   \
-                        .texture  = GL_TEXTURE_NONE,            \
-                        .rotation = TEXEL_ROTATE_0,             \
-                },                                              \
-                [CUBE_TOP] = {                                  \
-                        .filepath = BLOCK_TEXTURE_FILE(file),   \
-                        .texture  = GL_TEXTURE_NONE,            \
-                        .rotation = TEXEL_ROTATE_0,             \
-                },                                              \
-                [CUBE_BOTTOM] = {                               \
-                        .filepath = BLOCK_TEXTURE_FILE(file),   \
-                        .texture  = GL_TEXTURE_NONE,            \
-                        .rotation = TEXEL_ROTATE_0,             \
-                },                                              \
-                [CUBE_LEFT] = {                                 \
-                        .filepath = BLOCK_TEXTURE_FILE(file),   \
-                        .texture  = GL_TEXTURE_NONE,            \
-                        .rotation = TEXEL_ROTATE_0,             \
-                },                                              \
-                [CUBE_RIGHT] = {                                \
-                        .filepath = BLOCK_TEXTURE_FILE(file),   \
-                        .texture  = GL_TEXTURE_NONE,            \
-                        .rotation = TEXEL_ROTATE_0,             \
-                },                                              \
-        }
-
-#define BLOCK_TEXTURE_TOP_BOTTOM_SIDE(top, bottom, side)        \
-        .texels = {                                             \
-                [CUBE_FRONT] = {                                \
-                        .filepath = BLOCK_TEXTURE_FILE(side),   \
-                        .texture  = GL_TEXTURE_NONE,            \
-                        .rotation = TEXEL_ROTATE_0,             \
-                },                                              \
-                [CUBE_BACK] = {                                 \
-                        .filepath = BLOCK_TEXTURE_FILE(side),   \
-                        .texture  = GL_TEXTURE_NONE,            \
-                        .rotation = TEXEL_ROTATE_0,             \
-                },                                              \
-                [CUBE_TOP] = {                                  \
-                        .filepath = BLOCK_TEXTURE_FILE(top),    \
-                        .texture  = GL_TEXTURE_NONE,            \
-                        .rotation = TEXEL_ROTATE_0,             \
-                },                                              \
-                [CUBE_BOTTOM] = {                               \
-                        .filepath = BLOCK_TEXTURE_FILE(bottom), \
-                        .texture  = GL_TEXTURE_NONE,            \
-                        .rotation = TEXEL_ROTATE_0,             \
-                },                                              \
-                [CUBE_LEFT] = {                                 \
-                        .filepath = BLOCK_TEXTURE_FILE(side),   \
-                        .texture  = GL_TEXTURE_NONE,            \
-                        .rotation = TEXEL_ROTATE_0,             \
-                },                                              \
-                [CUBE_RIGHT] = {                                \
-                        .filepath = BLOCK_TEXTURE_FILE(side),   \
-                        .texture  = GL_TEXTURE_NONE,            \
-                        .rotation = TEXEL_ROTATE_0,             \
-                },                                              \
-        }
-
-#define BLOCK_TEXTURE_SIX(front, back, top, bottom, left, right)        \
-        .texels = {                                                     \
-                [CUBE_FRONT] = {                                        \
-                        .filepath = BLOCK_TEXTURE_FILE(front),          \
-                        .texture  = GL_TEXTURE_NONE,                    \
-                        .rotation = TEXEL_ROTATE_0,                     \
-                },                                                      \
-                [CUBE_BACK] = {                                         \
-                        .filepath = BLOCK_TEXTURE_FILE(back),           \
-                        .texture  = GL_TEXTURE_NONE,                    \
-                        .rotation = TEXEL_ROTATE_0,                     \
-                },                                                      \
-                [CUBE_TOP] = {                                          \
-                        .filepath = BLOCK_TEXTURE_FILE(top),            \
-                        .texture  = GL_TEXTURE_NONE,                    \
-                        .rotation = TEXEL_ROTATE_0,                     \
-                },                                                      \
-                [CUBE_BOTTOM] = {                                       \
-                        .filepath = BLOCK_TEXTURE_FILE(bottom),         \
-                        .texture  = GL_TEXTURE_NONE,                    \
-                        .rotation = TEXEL_ROTATE_0,                     \
-                },                                                      \
-                [CUBE_LEFT] = {                                         \
-                        .filepath = BLOCK_TEXTURE_FILE(left),           \
-                        .texture  = GL_TEXTURE_NONE,                    \
-                        .rotation = TEXEL_ROTATE_0,                     \
-                },                                                      \
-                [CUBE_RIGHT] = {                                        \
-                        .filepath = BLOCK_TEXTURE_FILE(right),          \
-                        .texture  = GL_TEXTURE_NONE,                    \
-                        .rotation = TEXEL_ROTATE_0,                     \
-                },                                                      \
-        }
-
 #define BLOCK_DIMENSION_CUBE                                    \
         .size = {                                               \
                 .height = BLOCK_EDGE_LEN_GLUNIT,                \
@@ -194,16 +58,73 @@ static block_shader *block_shader_list[] = {
                 .width = BLOCK_EDGE_LEN_GLUNIT,                 \
         }
 
+
+#define BLOCK_TEXEL_SLOT_DIRT                   {  0, 0  }
+#define BLOCK_TEXEL_SLOT_GRASS_SIDE             {  1, 0  }
+#define BLOCK_TEXEL_SLOT_GRASS_TOP              {  2, 0  }
+#define BLOCK_TEXEL_SLOT_BEDROCK                {  9, 0  }
+#define BLOCK_TEXEL_SLOT_STONE                  {  0, 1  }
+#define BLOCK_TEXEL_SLOT_TNT_TOP                {  0, 15 }
+#define BLOCK_TEXEL_SLOT_TNT_BOTTOM             {  1, 15 }
+#define BLOCK_TEXEL_SLOT_TNT_SIDE               {  2, 15 }
+#define BLOCK_TEXEL_SLOT_GLASS                  { 11, 15 }
+#define BLOCK_TEXEL_SLOT_DEBUG                  { 15, 15 }
+#define BLOCK_TEXEL_SLOT_DEBUG2                 { 15, 14 }
+
+#define BLOCK_TEXTURE_NONE                                      \
+        .texel = {                                              \
+                .textured = 0,                                  \
+        }
+
+#define BLOCK_TEXTURE_SINGLE(pack, slot)                       \
+        .texel = {                                              \
+                .textured = 1,                                  \
+                .texel = GL_TEXTURE_NONE,                       \
+                .texel_pack = (pack),                           \
+                .texel_slot = {                                 \
+                        [CUBE_FRONT]  = BLOCK_TEXEL_##slot,     \
+                        [CUBE_BACK]   = BLOCK_TEXEL_##slot,     \
+                        [CUBE_TOP]    = BLOCK_TEXEL_##slot,     \
+                        [CUBE_BOTTOM] = BLOCK_TEXEL_##slot,     \
+                        [CUBE_LEFT]   = BLOCK_TEXEL_##slot,     \
+                        [CUBE_RIGHT]  = BLOCK_TEXEL_##slot,     \
+                },                                              \
+        }
+
+#define BLOCK_TEXTURE_TOP_BOTTOM_SIDE(pack, top, bottom, side)  \
+        .texel = {                                              \
+                .textured = 1,                                  \
+                .texel = GL_TEXTURE_NONE,                       \
+                .texel_pack = (pack),                           \
+                .texel_slot = {                                 \
+                        [CUBE_FRONT]  = BLOCK_TEXEL_##side,     \
+                        [CUBE_BACK]   = BLOCK_TEXEL_##side,     \
+                        [CUBE_TOP]    = BLOCK_TEXEL_##top,      \
+                        [CUBE_BOTTOM] = BLOCK_TEXEL_##bottom,   \
+                        [CUBE_LEFT]   = BLOCK_TEXEL_##side,     \
+                        [CUBE_RIGHT]  = BLOCK_TEXEL_##side,     \
+                },                                              \
+        }
+
 static block_attr block_test = {
         .name = "testy",
 
         BLOCK_DIMENSION_CUBE,
         BLOCK_MODEL_CUBE,
 
-        .have_texel = 1,
-        BLOCK_TEXTURE_SIX("test_front", "test_back",
-                          "test_top", "test_bottom",
-                          "test_left", "test_right"),
+        .texel = {
+                .textured = 1,
+                .texel = GL_TEXTURE_NONE,
+                .texel_pack = TEXELPACK_GENERIC_BLOCKS,
+                .texel_slot = {
+                        [CUBE_FRONT] = BLOCK_TEXEL_SLOT_DEBUG,
+                        [CUBE_BACK] = BLOCK_TEXEL_SLOT_DEBUG,
+                        [CUBE_TOP] = BLOCK_TEXEL_SLOT_DEBUG,
+                        [CUBE_BOTTOM] = BLOCK_TEXEL_SLOT_DEBUG,
+                        [CUBE_LEFT] = BLOCK_TEXEL_SLOT_DEBUG,
+                        [CUBE_RIGHT] = BLOCK_TEXEL_SLOT_DEBUG,
+                },
+        },
 
         .visible = 1,
         .shader = BLK_SHADER_GENERIC,
@@ -218,7 +139,6 @@ static block_attr block_air = {
         BLOCK_DIMENSION_CUBE,
         BLOCK_MODEL_CUBE,
 
-        .have_texel = 0,
         BLOCK_TEXTURE_NONE,
 
         .visible = 0,
@@ -234,7 +154,6 @@ static block_attr block_air_wall = {
         BLOCK_DIMENSION_CUBE,
         BLOCK_MODEL_CUBE,
 
-        .have_texel = 0,
         BLOCK_TEXTURE_NONE,
 
         .visible = 0,
@@ -250,13 +169,12 @@ static block_attr block_bedrock = {
         BLOCK_DIMENSION_CUBE,
         BLOCK_MODEL_CUBE,
 
-        .have_texel = 1,
-        BLOCK_TEXTURE_SINGLE("bedrock"),
+        BLOCK_TEXTURE_SINGLE(TEXELPACK_GENERIC_BLOCKS, SLOT_BEDROCK),
 
         .visible = 1,
         .shader = BLK_SHADER_GENERIC,
 
-        .destroyable = 1,
+        .destroyable = 0,
         .throughable = 0,
 };
 
@@ -266,26 +184,8 @@ static block_attr block_grass = {
         BLOCK_DIMENSION_CUBE,
         BLOCK_MODEL_CUBE,
 
-        .have_texel = 1,
-        BLOCK_TEXTURE_TOP_BOTTOM_SIDE("grass_top", "dirt", "grass_side"),
-
-        .visible = 1,
-        .shader = BLK_SHADER_GENERIC,
-
-        .destroyable = 1,
-        .throughable = 0,
-};
-
-static block_attr block_grass_path = {
-        .name = "grass",
-
-        BLOCK_DIMENSION_CUBE,
-        BLOCK_MODEL_CUBE,
-
-        .have_texel = 1,
-        BLOCK_TEXTURE_TOP_BOTTOM_SIDE("grass_path_top",
-                                      "dirt",
-                                      "grass_path_side"),
+        BLOCK_TEXTURE_TOP_BOTTOM_SIDE(TEXELPACK_GENERIC_BLOCKS, SLOT_GRASS_TOP,
+                                      SLOT_DIRT, SLOT_GRASS_SIDE),
 
         .visible = 1,
         .shader = BLK_SHADER_GENERIC,
@@ -300,8 +200,7 @@ static block_attr block_dirt = {
         BLOCK_DIMENSION_CUBE,
         BLOCK_MODEL_CUBE,
 
-        .have_texel = 1,
-        BLOCK_TEXTURE_SINGLE("dirt"),
+        BLOCK_TEXTURE_SINGLE(TEXELPACK_GENERIC_BLOCKS, SLOT_DIRT),
 
         .visible = 1,
         .shader = BLK_SHADER_GENERIC,
@@ -316,8 +215,7 @@ static block_attr block_stone = {
         BLOCK_DIMENSION_CUBE,
         BLOCK_MODEL_CUBE,
 
-        .have_texel = 1,
-        BLOCK_TEXTURE_SINGLE("stone"),
+        BLOCK_TEXTURE_SINGLE(TEXELPACK_GENERIC_BLOCKS, SLOT_STONE),
 
         .visible = 1,
         .shader = BLK_SHADER_GENERIC,
@@ -332,8 +230,8 @@ static block_attr block_tnt = {
         BLOCK_DIMENSION_CUBE,
         BLOCK_MODEL_CUBE,
 
-        .have_texel = 1,
-        BLOCK_TEXTURE_TOP_BOTTOM_SIDE("tnt_top", "tnt_bottom", "tnt_side"),
+        BLOCK_TEXTURE_TOP_BOTTOM_SIDE(TEXELPACK_GENERIC_BLOCKS, SLOT_TNT_TOP,
+                                      SLOT_TNT_BOTTOM, SLOT_TNT_SIDE),
 
         .visible = 1,
         .shader = BLK_SHADER_GENERIC,
@@ -352,8 +250,7 @@ static block_attr block_glass = {
                 .height = 1.0f,
         },
 
-        .have_texel = 1,
-        BLOCK_TEXTURE_SINGLE("glass"),
+        BLOCK_TEXTURE_SINGLE(TEXELPACK_GENERIC_BLOCKS, SLOT_GLASS),
 
         .visible = 1,
         .shader = BLK_SHADER_GENERIC,
@@ -362,12 +259,11 @@ static block_attr block_glass = {
         .throughable = 0,
 };
 
-static block_attr *block_type_list[] = {
+static block_attr *block_attr_list[] = {
         [BLOCK_AIR]             = &block_air,
         [BLOCK_AIRWALL]         = &block_air_wall,
         [BLOCK_BEDROCK]         = &block_bedrock,
         [BLOCK_GRASS]           = &block_grass,
-        [BLOCK_GRASS_PATH]      = &block_grass_path,
         [BLOCK_DIRT]            = &block_dirt,
         [BLOCK_STONE]           = &block_stone,
         [BLOCK_TNT]             = &block_tnt,
@@ -376,76 +272,46 @@ static block_attr *block_type_list[] = {
         NULL,
 };
 
-int block_type_init(void)
+int block_texel_init(block_texel *t)
 {
-        int i;
-        block_attr *p;
-        block_attr **list = block_type_list;
+        if (!t->textured)
+                return 0;
 
-        // TODO: We may want a texture manager to save some memory
-        for (i = 0, p = list[i]; p != NULL; i++, p = list[i]) {
-                if (p->have_texel) {
-                        for (int j = 0; j < NR_CUBE_FACES; ++j) {
-                                block_texel *texel = &(p->texels[j]);
+        for (int i = 0; i < CUBE_QUAD_FACES; ++i) {
+                vec2 *uv = t->uv[i];
 
-                                // FIXME: We assume that all png texture has alpha channel (RGBA)
-                                image_png32_load(&(texel->png), texel->filepath);
-                                if (texel->png.data == NULL) {
-                                        pr_err_func("failed to load block [%s] texture\n", p->name);
-                                        return -EIO;
-                                }
+                t->texel_rotation[i] = TEXEL_ROTATE_0;
+                t->texel = texel_pack_texture_get(t->texel_pack);
 
-                                // Decoded PNG image need to flip vertically
-                                image_vertical_flip(texel->png.data,
-                                                    texel->png.width,
-                                                    texel->png.height);
-
-                                // TODO: We may wanna change filter level on the fly
-                                texel->filter_level = FILTER_NEAREST;
-                                texel->texture = texture_png_create(&(texel->png), texel->filter_level);
-
-                                if (glIsTexture(texel->texture) == GL_FALSE) {
-                                        pr_err_func("failed to create texture block [%s] face [%s]\n", p->name, cube_face_str[j]);
-                                        return -EFAULT;
-                                }
-
-                                pr_debug_func("loaded block [%s] [%s] [%s]\n",
-                                              p->name, cube_face_str[j],
-                                              texel->filepath);
-                        }
-                }
+                texel_slot_get(t->texel_pack, t->texel_slot[i], uv);
         }
 
         return 0;
 }
 
-int block_type_deinit(void)
+int block_attr_init(void)
 {
         int i;
         block_attr *p;
-        block_attr **list = block_type_list;
+        block_attr **list = block_attr_list;
 
         for (i = 0, p = list[i]; p != NULL; i++, p = list[i]) {
-                if (p->have_texel) {
-                        for (int j = 0; j < NR_CUBE_FACES; ++j) {
-                                if (p->texels[j].png.data)
-                                        image_png_free(&(p->texels[j].png));
-
-                                texture_delete(&(p->texels[j].texture));
-                        }
-                }
+                block_texel_init(&p->texel);
         }
 
         return 0;
 }
 
-int block_type_dump(void)
+int block_attr_deinit(void)
+{
+        return 0;
+}
+
+int block_attr_dump(void)
 {
         int i;
         block_attr *p;
-        block_attr **list = block_type_list;
-
-        pr_info_func("\n");
+        block_attr **list = block_attr_list;
 
         for (i = 0, p = list[i]; p != NULL; i++, p = list[i]) {
                 pr_info("Block: %s\n", p->name);
@@ -454,43 +320,19 @@ int block_type_dump(void)
                 pr_info("Visible: %d\n", p->visible);
                 pr_info("Destroyable: %d\n", p->destroyable);
                 pr_info("Throughable: %d\n", p->throughable);
-                pr_info("Textured: %d\n", p->have_texel);
-                if (p->have_texel) {
-                        for (int j = 0; j < NR_CUBE_FACES; ++j) {
-                                block_texel *texel = &(p->texels[j]);
-
-                                pr_info("Face %d %s:\n", j, cube_face_str[j]);
-                                pr_info("Texture PNG: w: %d h: %d bpp: %d\n",
-                                        texel->png.width,
-                                        texel->png.height,
-                                        texel->png.bpp);
-                                pr_info("Texture Handle: %d\n",
-                                        texel->texture);
-                                pr_info("Texture Rotation: %s\n",
-                                        texel_rotate_str[texel->rotation]);
-                                pr_info("Texture Filter: %s\n",
-                                        texel_filter_level[texel->filter_level]);
-                        }
-                }
+                pr_info("Textured: %d\n", p->texel.textured);
                 pr_info("------\n");
         }
 
         return 0;
 }
 
-int block_type_sanity_check()
+block_attr *block_attr_get(block_attr_idx idx)
 {
-        // TODO: Block sanity check
-
-        return 0;
-}
-
-block_attr *block_type_get(int idx)
-{
-        if (idx >= NR_BLOCK_TYPE || idx < 0)
+        if (idx < 0 || idx >= NR_BLOCK_TYPE)
                 return NULL;
 
-        return block_type_list[idx];
+        return block_attr_list[idx];
 }
 
 int block_shader_init(void)
@@ -526,7 +368,7 @@ int block_shader_deinit(void)
         return 0;
 }
 
-GLuint block_shader_get(int32_t idx)
+GLuint block_shader_get(block_shader_idx idx)
 {
         if (idx >= NR_BLOCK_SHADER || idx < 0)
                 return GL_PROGRAM_NONE;
