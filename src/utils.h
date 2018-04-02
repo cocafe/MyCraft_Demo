@@ -22,6 +22,23 @@
 #define SUFFIX_OBJ                      ".obj"
 #define SUFFIX_GLSL                     ".glsl"
 
+enum vec_attr {
+        X = 0,
+        Y,
+        Z,
+        W,
+        NR_VEC_IDX,
+};
+
+enum vertex_idx {
+        V1 = 0,
+        V2,
+        V3,
+        V4,
+        V5,
+        V6,
+};
+
 typedef float vec2[2];
 
 typedef int32_t ivec2[2];

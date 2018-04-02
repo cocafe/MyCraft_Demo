@@ -7,23 +7,6 @@
 #include "glutils.h"
 #include "block.h"
 
-enum vec_attr {
-        X = 0,
-        Y,
-        Z,
-        W,
-        NR_VEC_IDX,
-};
-
-enum vertex_idx {
-        V1 = 0,
-        V2,
-        V3,
-        V4,
-        V5,
-        V6,
-};
-
 typedef struct block_face {
         vec3            vertex[VERTICES_QUAD_FACE];
         vec3            vertex_normal[VERTICES_QUAD_FACE];
