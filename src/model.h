@@ -7,20 +7,18 @@
 #include "glutils.h"
 #include "block.h"
 
+#define VERTICES_TRIANGULATE_CUBE (CUBE_QUAD_FACES * VERTICES_TRIANGULATE_QUAD)
+
 typedef struct block_face {
-        vec3            vertex[VERTICES_QUAD_FACE];
-        vec3            vertex_normal[VERTICES_QUAD_FACE];
-        vec2            uv[VERTICES_QUAD_FACE];
-
-        vec3            normal;
-
-        gl_attr         glattr;
+        vec3 vertex[VERTICES_TRIANGULATE_QUAD];
+        vec3 vertex_normal[VERTICES_TRIANGULATE_QUAD];
+        vec2 uv[VERTICES_TRIANGULATE_QUAD];
 } block_face;
 
 typedef struct block_model {
         vec3            origin_gl;
 
-        block_face      faces[CUBE_QUAD_FACES];
+        gl_attr         glattr;
 } block_model;
 
 int block_model_init(block_model *mesh, vec3 origin_gl);
