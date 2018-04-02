@@ -37,7 +37,7 @@ typedef struct gl_attr {
 GLuint vertex_array_create(void);
 int vertex_array_delete(GLuint *vertex_array);
 
-GLuint buffer_create(GLfloat *data, GLsizei size);
+GLuint buffer_create(void *data, GLsizei size);
 int buffer_delete(GLuint *buffer);
 
 GLuint shader_compile(GLenum type, const char *source);

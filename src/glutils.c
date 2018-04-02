@@ -31,7 +31,7 @@ int vertex_array_delete(GLuint *vertex_array)
         return 0;
 }
 
-GLuint buffer_create(GLfloat *data, GLsizei size)
+GLuint buffer_create(void *data, GLsizei size)
 {
         GLuint buffer;
 
