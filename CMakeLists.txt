@@ -49,7 +49,8 @@ set(SOURCE_FILES
         src/player.h
         src/world.c
         src/world.h
-        )
+        src/texel.c
+        src/texel.h)
 
 set(LIB_SOURCE_FILES
         lib/lodepng.c
