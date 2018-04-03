@@ -129,12 +129,11 @@ void image_vertical_flip(uint8_t *data, uint32_t width, uint32_t height);
  * Sequence List Implementation
  */
 
-#define SEQLIST_EXPAND_COUNT           (8)
-
 typedef struct seqlist {
         void    *data;
         size_t  element_size;
 
+        size_t  count_expand;
         size_t  count_utilized;
         size_t  count_allocated;
 } seqlist;

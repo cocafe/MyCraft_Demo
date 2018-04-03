@@ -369,6 +369,7 @@ int seqlist_init(seqlist *list, size_t element_size, size_t count)
         list->element_size = element_size;
         list->count_allocated = count;
         list->count_utilized = 0;
+        list->count_expand = count;
 
         return 0;
 }
@@ -447,7 +448,7 @@ int seqlist_append(seqlist *list, void *element)
                 return -EINVAL;
 
         if (list->count_utilized >= list->count_allocated) {
-                ret = seqlist_expand(list, SEQLIST_EXPAND_COUNT);
+                ret = seqlist_expand(list, list->count_expand);
                 if (ret) {
                         pr_err_func("failed to expand sequence list\n");
                         return ret;
