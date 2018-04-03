@@ -94,7 +94,7 @@ typedef struct block_attr {
         block_texel             texel;
 
         int32_t                 visible;        // If invisible, shader is useless
-        block_shader_idx       shader;
+        block_shader_idx        shader;
 
         int32_t                 throughable;
         int32_t                 destroyable;
