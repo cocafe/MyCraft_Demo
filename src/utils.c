@@ -9,6 +9,39 @@
 #include "debug.h"
 #include "utils.h"
 
+int vec2_equal(const vec2 a, const vec2 b)
+{
+        float epsilon = FLT_EPSILON;
+
+        if (float_equal(a[0], b[0], epsilon) &&
+            float_equal(a[1], b[1], epsilon))
+                return 1;
+        else
+                return 0;
+}
+
+int vec3_equal(const vec3 a, const vec3 b)
+{
+        float epsilon = FLT_EPSILON;
+
+        if (float_equal(a[0], b[0], epsilon) &&
+            float_equal(a[1], b[1], epsilon) &&
+            float_equal(a[2], b[2], epsilon))
+                return 1;
+        else
+                return 0;
+}
+
+int ivec2_equal(const ivec2 a, const ivec2 b)
+{
+        for (int i = 0; i < 2; ++i) {
+                if (a[i] != b[i])
+                        return 0;
+        }
+
+        return 1;
+}
+
 int ivec3_equal(const ivec3 a, const ivec3 b)
 {
         for (int i = 0; i < 3; ++i) {

@@ -53,6 +53,9 @@ typedef float *pvec2;
 typedef float *pvec3;
 typedef float *pvec4;
 
+int vec2_equal(const vec2 a, const vec2 b);
+int vec3_equal(const vec3 a, const vec3 b);
+int ivec2_equal(const ivec2 a, const ivec2 b);
 int ivec3_equal(const ivec3 a, const ivec3 b);
 int float_equal(float a, float b, float epsilon);
 
