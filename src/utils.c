@@ -402,7 +402,7 @@ int seqlist_expand(seqlist *list, size_t count)
          * re-allocated memory block is clear, and we do some bytes copies
          * in seqlist_append()
          */
-        new_data = calloc(new_count, list->element_size * new_count);
+        new_data = calloc(new_count, list->element_size);
         if (!new_data) {
                 pr_err_alloc();
                 return -ENOMEM;
