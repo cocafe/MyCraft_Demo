@@ -3,6 +3,9 @@
 
 #include <cglm/cglm.h>
 
+/**
+ * Compiler
+ */
 #define ARRAY_SIZE(a)                   (sizeof(a) / sizeof((a)[0]))
 
 #if defined(__GNUC__)
@@ -15,6 +18,9 @@
 
 #define UNUSED_PARAM(x)                 (void)(x)
 
+/**
+ * File
+ */
 #define FILEPATH_MAX_LEN                (1024)
 
 #define SUFFIX_PNG                      ".png"
@@ -24,6 +30,9 @@
 #define SUFFIX_OBJ                      ".obj"
 #define SUFFIX_GLSL                     ".glsl"
 
+/**
+ * Vertex
+ */
 #define VERTICES_TRIANGLE               (3)
 #define VERTICES_QUAD                   (4)
 #define VERTICES_TRIANGULATE_QUAD       (2 * VERTICES_TRIANGLE)
@@ -55,11 +64,19 @@ typedef float *pvec2;
 typedef float *pvec3;
 typedef float *pvec4;
 
+/**
+ * Equality Test
+ */
+
 int vec2_equal(const vec2 a, const vec2 b);
 int vec3_equal(const vec3 a, const vec3 b);
 int ivec2_equal(const ivec2 a, const ivec2 b);
 int ivec3_equal(const ivec3 a, const ivec3 b);
 int float_equal(float a, float b, float epsilon);
+
+/**
+ * Math
+ */
 
 int clamp(int x, int min, int max);
 float clampf(float x, float min, float max);
@@ -69,16 +86,28 @@ int cycle(int x, int bound_lower, int bound_upper);
 float cyclef(float x, float bound_lower, float bound_upper);
 double cyclelf(double x, double bound_lower, double bound_upper);
 
+/**
+ * Memory Heap
+ */
 int memzero(void *ptr, size_t size);
 int memdump(void *ptr, size_t size);
 void *memalloc(size_t size);
 int memfree(void **ptr);
 
+/**
+ * File
+ */
 char *file_read(const char *filepath);
 
+/**
+ * String Buffer
+ */
 char *buf_alloc(size_t len);
 int buf_free(char **buf);
 
+/**
+ * Misc
+ */
 void image_vertical_flip(uint8_t *data, uint32_t width, uint32_t height);
 
 /**
