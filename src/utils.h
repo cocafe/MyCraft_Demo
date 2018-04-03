@@ -2,6 +2,7 @@
 #define MYCRAFT_DEMO_UTIL_H
 
 #include <cglm/cglm.h>
+#include <GLFW/glfw3.h>
 
 /**
  * Compiler
@@ -17,6 +18,20 @@
 #endif
 
 #define UNUSED_PARAM(x)                 (void)(x)
+
+/**
+ * Simple Time Profiler
+ */
+#define SEC_TO_MS(s)                    ((s) * 1000)
+
+// XXX: Be careful with variable scope
+
+#define TIME_PROFILER_SET                               \
+        double profiler_timestamp = glfwGetTime()
+
+#define TIME_PROFILER_RET                               \
+        pr_debug_func("profiler: %lf ms\n",             \
+        SEC_TO_MS(glfwGetTime() - profiler_timestamp))
 
 /**
  * File
