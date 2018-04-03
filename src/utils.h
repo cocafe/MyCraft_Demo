@@ -13,6 +13,8 @@
 #define unlikely(x)                     (x)
 #endif
 
+#define UNUSED_PARAM(x)                 (void)(x)
+
 #define FILEPATH_MAX_LEN                (1024)
 
 #define SUFFIX_PNG                      ".png"
