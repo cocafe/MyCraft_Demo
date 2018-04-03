@@ -103,8 +103,10 @@ int block_deinit(block *b)
         if (!b)
                 return -EINVAL;
 
-        if (b->model)
+        if (b->model) {
                 block_model_deinit(b->model);
+                free(b->model);
+        }
 
         return 0;
 }
