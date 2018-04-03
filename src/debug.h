@@ -17,7 +17,7 @@ extern uint32_t g_debug_sync;
                                         if (g_debug_level & PRINT_INFO_BIT) {   \
                                                 fprintf(stdout, __VA_ARGS__);   \
                                                                                 \
-                                                if (g_debug_sync)               \
+                                        if (g_debug_sync & PRINT_INFO_BIT)      \
                                                         fflush(stdout);         \
                                         }                                       \
                                 } while (0)
@@ -31,7 +31,7 @@ extern uint32_t g_debug_sync;
                                         if (g_debug_level & PRINT_DEBUG_BIT) {  \
                                                 fprintf(stdout, __VA_ARGS__);   \
                                                                                 \
-                                                if (g_debug_sync)               \
+                                        if (g_debug_sync & PRINT_DEBUG_BIT)     \
                                                         fflush(stdout);         \
                                         }                                       \
                                 } while (0)
@@ -45,7 +45,7 @@ extern uint32_t g_debug_sync;
                                         if (g_debug_level & PRINT_ERROR_BIT) {  \
                                                 fprintf(stderr, __VA_ARGS__);   \
                                                                                 \
-                                                if (g_debug_sync)               \
+                                        if (g_debug_sync & PRINT_ERROR_BIT)     \
                                                         fflush(stderr);         \
                                         }                                       \
                                 } while (0)
