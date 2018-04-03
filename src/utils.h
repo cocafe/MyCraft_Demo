@@ -91,8 +91,8 @@ typedef struct seqlist {
         void    *data;
         size_t  element_size;
 
-        size_t  count_seqlist;
         size_t  count_utilized;
+        size_t  count_allocated;
 } seqlist;
 
 int seqlist_alloc(seqlist **list);

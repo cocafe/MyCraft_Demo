@@ -367,7 +367,7 @@ int seqlist_init(seqlist *list, size_t element_size, size_t count)
         }
 
         list->element_size = element_size;
-        list->count_seqlist = count;
+        list->count_allocated = count;
         list->count_utilized = 0;
 
         return 0;
@@ -395,7 +395,7 @@ int seqlist_expand(seqlist *list, size_t count)
         if (!list)
                 return -EINVAL;
 
-        new_count = list->count_seqlist + count;
+        new_count = list->count_allocated + count;
 
         /*
          * We do not use realloc() here, realloc() does not guarantee
@@ -412,7 +412,7 @@ int seqlist_expand(seqlist *list, size_t count)
         free(list->data);
 
         list->data = new_data;
-        list->count_seqlist = new_count;
+        list->count_allocated = new_count;
 
         return 0;
 }
@@ -431,7 +431,7 @@ int seqlist_shrink(seqlist *list)
         }
 
         list->data = new_data;
-        list->count_seqlist = list->count_utilized;
+        list->count_allocated = list->count_utilized;
 
         return 0;
 }
@@ -446,7 +446,7 @@ int seqlist_append(seqlist *list, void *element)
         if (!list || !element)
                 return -EINVAL;
 
-        if (list->count_utilized >= list->count_seqlist) {
+        if (list->count_utilized >= list->count_allocated) {
                 ret = seqlist_expand(list, SEQLIST_EXPAND_COUNT);
                 if (ret) {
                         pr_err_func("failed to expand sequence list\n");
