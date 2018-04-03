@@ -110,7 +110,7 @@ int seqlist_append(seqlist *list, void *element);
 typedef struct linklist_node {
         void                    *data;
         // TODO: We can make it custom attribute struct
-        int                     mark_delete;
+        int                     flag_delete;
 
         struct linklist_node    *prev;
         struct linklist_node    *next;

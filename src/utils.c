@@ -515,7 +515,7 @@ int linklist_node_init(linklist_node *n, linklist_node *prev,
 
         n->prev = prev;
         n->next = next;
-        n->mark_delete = 0;
+        n->flag_delete = 0;
 
         return 0;
 }
@@ -733,7 +733,7 @@ int linklist_delete_marked(linklist *list)
         if (!list->head)
                 return -ENODATA;
 
-        while (list->head && list->head->mark_delete) {
+        while (list->head && list->head->flag_delete) {
                 next = list->head->next;
 
                 __linklist_node_delete(list, &list->head);
@@ -748,7 +748,7 @@ int linklist_delete_marked(linklist *list)
                 prev = curr->prev;
                 next = curr->next;
 
-                if (curr->mark_delete) {
+                if (curr->flag_delete) {
                         prev->next = next;
                         if (next != NULL)
                                 next->prev = prev;
