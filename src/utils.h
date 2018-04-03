@@ -54,6 +54,7 @@ typedef float *pvec3;
 typedef float *pvec4;
 
 int ivec3_equal(const ivec3 a, const ivec3 b);
+int float_equal(float a, float b, float epsilon);
 
 int clamp(int x, int min, int max);
 float clampf(float x, float min, float max);

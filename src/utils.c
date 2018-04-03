@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include <memory.h>
 #include <errno.h>
+#include <math.h>
+#include <float.h>
 
 #include "debug.h"
 #include "utils.h"
@@ -15,6 +17,22 @@ int ivec3_equal(const ivec3 a, const ivec3 b)
         }
 
         return 1;
+}
+
+/* Nearly equal */
+int float_equal(float a, float b, float epsilon)
+{
+        float abs_a = fabsf(a);
+        float abs_b = fabsf(b);
+        float diff = fabsf(a - b);
+
+        if (a == b) {
+                return true;
+        } else if (a == 0 || b == 0 || diff < FLT_MIN){
+                return diff < (epsilon * FLT_MIN);
+        } else {
+                return (diff / fminf((abs_a + abs_b), FLT_MIN)) < epsilon;
+        }
 }
 
 /**
