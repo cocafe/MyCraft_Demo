@@ -77,31 +77,24 @@ int block_model_init(block_model *model, vec3 origin_gl)
 
 int block_model_deinit(block_model *model)
 {
-        gl_attr *glattr;
-
         if (!model)
                 return -EINVAL;
 
-        glattr = model->glattr;
-
-        if (glIsBuffer(glattr->vertex) != GL_FALSE)
-                buffer_delete(&glattr->vertex);
-
-        if (glIsBuffer(glattr->vertex) != GL_FALSE)
-                buffer_delete(&glattr->vertex_nrm);
-
-        if (glIsBuffer(glattr->vertex_uv) != GL_FALSE)
-                buffer_delete(&glattr->vertex_uv);
-
         if (model->faces)
-                memfree((void **)&model->faces);
+                block_model_faces_free(model);
 
-        // Free optional allocated memory
-        if (model->glvbo)
+        if (model->glvbo) {
+                gl_vbo_deinit(model->glvbo);
                 memfree((void **)&model->glvbo);
+        }
 
-        if (model->glattr)
+        if (model->glattr) {
+                gl_attr *glattr = model->glattr;
+
+                gl_attr_buffer_delete(glattr);
+
                 memfree((void **)&model->glattr);
+        }
 
         memzero(model, sizeof(block_model));
 
@@ -476,7 +469,7 @@ del_vertex:
 
 int block_model_gl_attr_vbo(block_model *model, block_attr *blk_attr)
 {
-        int             ret;
+        int ret;
 
         if (!model)
                 return -EINVAL;
