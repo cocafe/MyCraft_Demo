@@ -52,7 +52,8 @@ int ivec3_equal(const ivec3 a, const ivec3 b)
         return 1;
 }
 
-/* Nearly equal */
+#if 0
+// Nearly equal
 int float_equal(float a, float b, float epsilon)
 {
         float abs_a = fabsf(a);
@@ -67,6 +68,16 @@ int float_equal(float a, float b, float epsilon)
                 return (diff / fminf((abs_a + abs_b), FLT_MIN)) < epsilon;
         }
 }
+#else
+// Not precise, and not handling edge case
+int float_equal(float a, float b, float epsilon)
+{
+        if (a == b)
+                return true;
+
+        return fabsf(a - b) <= epsilon;
+}
+#endif
 
 /**
  * clamp() - restrict value to given range [min, max]
