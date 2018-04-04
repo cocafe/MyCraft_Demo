@@ -50,7 +50,9 @@ set(SOURCE_FILES
         src/world.c
         src/world.h
         src/texel.c
-        src/texel.h)
+        src/texel.h
+        src/chunks.c
+        src/chunks.h)
 
 set(LIB_SOURCE_FILES
         lib/lodepng.c
