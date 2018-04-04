@@ -7,6 +7,7 @@
 #include <GL/glew.h>
 
 #include "debug.h"
+#include "block.h"
 #include "model.h"
 #include "utils.h"
 #include "world.h"
@@ -135,6 +136,26 @@ int block_in_chunk(ivec3 origin_block, int chunk_length, ivec3 origin_chunk)
         return 0;
 }
 
+int block_generate_model(block *b)
+{
+        vec3 origin_gl = { 0 };
+
+        if (b->model)
+                pr_err_func("block model heap is corrupted or already generated\n");
+
+        b->model = memalloc(sizeof(block_model));
+        if (!b->model)
+                return -ENOMEM;
+
+        coordinate_local_to_gl(b->origin_l, BLOCK_EDGE_LEN_GLUNIT, origin_gl);
+
+        block_model_init(b->model, origin_gl);
+        block_model_faces_alloc(b->model);
+        block_model_faces_generate(b->model, b->blk_attr);
+
+        return 0;
+}
+
 int block_draw(block *b, mat4 mat_transform, int vbo_enabled)
 {
         if (!b)
@@ -144,16 +165,7 @@ int block_draw(block *b, mat4 mat_transform, int vbo_enabled)
                 return 0;
 
         if (b->model == NULL) {
-                vec3 origin_gl = { 0 };
-                b->model = memalloc(sizeof(block_model));
-                if (!b->model)
-                        return -ENOMEM;
-
-                coordinate_local_to_gl(b->origin_l, BLOCK_EDGE_LEN_GLUNIT, origin_gl);
-
-                block_model_init(b->model, origin_gl);
-                block_model_faces_alloc(b->model);
-                block_model_faces_generate(b->model, b->blk_attr);
+                block_generate_model(b);
 
                 if (!vbo_enabled)
                         block_model_gl_attr(b->model, b->blk_attr);
@@ -183,6 +195,11 @@ int chunk_init(chunk *c, ivec3 origin_chunk)
         linklist_alloc(&c->blocks);
         linklist_init(c->blocks, sizeof(block));
 
+        seqlist_alloc(&c->vertices);
+        seqlist_init(c->vertices, sizeof(vertex_attr), 128);
+
+        c->state = CHUNK_INITED;
+
         return 0;
 }
 
@@ -199,6 +216,11 @@ int chunk_deinit(chunk *c)
 
         linklist_deinit(c->blocks);
         linklist_free(&c->blocks);
+
+        seqlist_deinit(c->vertices);
+        seqlist_free(&c->vertices);
+
+        memzero(c, sizeof(chunk));
 
         return 0;
 }
@@ -246,6 +268,10 @@ block *chunk_add_block(chunk *c, block *b)
                 return NULL;
 
         ret = linklist_append(c->blocks, b);
+        if (ret == NULL)
+                pr_err_func("linklist_append() failed\n");
+
+        c->state = CHUNK_NEED_UPDATE;
 
         return ret;
 }
@@ -267,6 +293,168 @@ int chunk_del_block(chunk *c, ivec3 origin_block)
 
         block_deinit(node->data);
         linklist_delete(c->blocks, node);
+
+        c->state = CHUNK_NEED_UPDATE;
+
+        return 0;
+}
+
+int chunk_vertices_pack(chunk *c)
+{
+        linklist_node *pos;
+
+        if (!c)
+                return 0;
+
+        linklist_for_each_node(pos, c->blocks->head) {
+                block *b = pos->data;
+
+                block_generate_model(b);
+
+                for (int i = 0; i < CUBE_QUAD_FACES; ++i) {
+                        block_face *f = &(b->model->faces[i]);
+
+                        for (int j = 0; j < VERTICES_TRIANGULATE_QUAD; ++j) {
+                                seqlist_append(c->vertices, &f->vertex[j]);
+                        }
+                }
+        }
+
+        seqlist_shrink(c->vertices);
+
+        return 0;
+}
+
+int chunk_vertices_free(chunk *c)
+{
+        if (!c)
+                return -EINVAL;
+
+        return seqlist_deinit(c->vertices);
+}
+
+void chunk_cleanup(chunk *c)
+{
+        if (glIsBuffer(c->glattr.vertex) != GL_FALSE)
+                gl_attr_buffer_delete(&c->glattr);
+
+        memzero(&c->glattr, sizeof(gl_attr));
+}
+
+int chunk_gl_attr_generate(gl_attr *glattr, block_attr *blk_dummy)
+{
+        int ret;
+
+        if (!glattr)
+                return -EINVAL;
+
+        glattr->program = block_shader_get(blk_dummy->shader);
+        ret  = glIsProgram(glattr->program);
+        if (ret == GL_FALSE) {
+                pr_err_func("invalid shader program\n");
+                return -EFAULT;
+        }
+
+        ret = glIsTexture(blk_dummy->texel.texel);
+        if (ret == GL_FALSE) {
+                pr_err_func("invalid texture object\n");
+                return -EFAULT;
+        } else {
+                glattr->texel = blk_dummy->texel.texel;
+        }
+
+        glattr->sampler = glGetUniformLocation(glattr->program, "sampler");
+        glattr->mat_transform = glGetUniformLocation(glattr->program, "mat_transform");
+
+        return 0;
+}
+
+int chunk_gl_vbo_buffer_generate(chunk *c)
+{
+        gl_vbo vbo;
+        int ret;
+
+        ret = gl_vbo_init(&vbo);
+        if (ret)
+                return -ENOMEM;
+
+        gl_vbo_index(&vbo, c->vertices->data,
+                     (uint32_t)c->vertices->count_utilized);
+
+        ret = gl_vbo_buffer_create(&vbo, &c->glattr);
+        if (ret == GL_FALSE)
+                pr_err_func("failed to generate chunk VBO\n");
+
+        gl_vbo_deinit(&vbo);
+
+        return ret;
+}
+
+int chunk_gl_data_update(chunk *c)
+{
+        if (!c)
+                return -EINVAL;
+
+        c->state = CHUNK_UPDATING;
+
+        chunk_cleanup(c);
+
+        chunk_vertices_pack(c);
+
+        chunk_gl_attr_generate(&c->glattr, block_attr_get(BLOCK_DUMMY));
+        chunk_gl_vbo_buffer_generate(c);
+
+        chunk_vertices_free(c);
+
+        c->state = CHUNK_UPDATED;
+
+        return 0;
+}
+
+int chunk_draw(chunk *c, mat4 mat_transform)
+{
+        gl_attr *glattr;
+
+        if (!c)
+                return -EINVAL;
+
+        if (c->state != CHUNK_UPDATED)
+                return -EBUSY;
+
+        glattr = &c->glattr;
+
+        glUseProgram(GL_PROGRAM_NONE);
+
+        glUseProgram(glattr->program);
+
+        glUniformMatrix4fv(glattr->mat_transform, 1, GL_FALSE, &mat_transform[0][0]);
+
+        if (glattr->texel != GL_TEXTURE_NONE) {
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, glattr->texel);
+                glUniform1i(glattr->sampler, 0);
+        }
+
+        glEnableVertexAttribArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, glattr->vertex);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
+
+        glEnableVertexAttribArray(1);
+        glBindBuffer(GL_ARRAY_BUFFER, glattr->vertex_nrm);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
+
+        glEnableVertexAttribArray(2);
+        glBindBuffer(GL_ARRAY_BUFFER, glattr->vertex_uv);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, (void *)0);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, glattr->vbo_index);
+        glDrawElements(GL_TRIANGLES, glattr->vertex_count, GL_UNSIGNED_INT, (void *)0);
+
+        glDisableVertexAttribArray(0);
+        glDisableVertexAttribArray(1);
+        glDisableVertexAttribArray(2);
+
+        glUseProgram(GL_PROGRAM_NONE);
 
         return 0;
 }
@@ -313,6 +501,8 @@ chunk *world_add_chunk(world *w, ivec3 origin_chunk)
         chunk_init(&c, origin_chunk);
 
         ret = linklist_append(w->chunks, &c);
+        if (ret == NULL)
+                pr_err_func("linklist_append() failed\n");
 
         return ret;
 }
@@ -399,7 +589,7 @@ int chunk_draw_block(chunk *c, mat4 mat_transform)
         return 0;
 }
 
-int world_block_draw(world *w, mat4 mat_transform /* TODO: Render distance */)
+int world_draw_block(world *w, mat4 mat_transform /* TODO: Render distance */)
 {
         linklist_node *pos;
 
@@ -408,6 +598,41 @@ int world_block_draw(world *w, mat4 mat_transform /* TODO: Render distance */)
 
         linklist_for_each_node(pos, w->chunks->head) {
                 chunk_draw_block(pos->data, mat_transform);
+        }
+
+        return 0;
+}
+
+int world_draw_chunk(world *w, mat4 mat_transform)
+{
+        linklist_node *pos;
+
+        if (!w)
+                return -EINVAL;
+
+        glEnable(GL_CULL_FACE);
+
+        linklist_for_each_node(pos, w->chunks->head) {
+                chunk_draw(pos->data, mat_transform);
+        }
+
+        glDisable(GL_CULL_FACE);
+
+        return 0;
+}
+
+int world_update_chunk(world *w)
+{
+        linklist_node *pos;
+
+        if (!w)
+                return -EINVAL;
+
+        linklist_for_each_node(pos, w->chunks->head) {
+                chunk *c = pos->data;
+
+                if (c->state == CHUNK_NEED_UPDATE)
+                        chunk_gl_data_update(c);
         }
 
         return 0;

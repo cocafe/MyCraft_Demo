@@ -40,9 +40,24 @@ typedef struct block {
         block_model     *model;
 } block;
 
+typedef enum chunk_state {
+        CHUNK_UNKNOWN = 0,
+        CHUNK_INITED,
+        CHUNK_UPDATED,
+        CHUNK_UPDATING,
+        CHUNK_NEED_UPDATE,
+        NR_CHUNK_STATES,
+} chunk_state;
+
 typedef struct chunk {
         ivec3           origin_l;
 
+        // TODO: Need to be thread-safe
+        chunk_state     state;
+
+        gl_attr         glattr;
+
+        seqlist         *vertices;
         linklist        *blocks;
 } chunk;
 
@@ -61,7 +76,7 @@ int block_deinit(block *b);
 
 int block_in_chunk(ivec3 origin_block, int chunk_length, ivec3 origin_chunk);
 
-int block_draw(block *b, mat4 mat_transform);
+int block_draw(block *b, mat4 mat_transform, int vbo_enabled);
 int block_dump(block *b);
 
 int chunk_init(chunk *c, ivec3 origin_chunk);
@@ -85,7 +100,11 @@ chunk *world_get_chunk(world *w, ivec3 origin_chunk);
 int world_add_block(world *w, block *b);
 int world_del_block(world *w, ivec3 origin_block);
 
-int world_block_draw(world *w, mat4 mat_transform);
+int world_draw_block(world *w, mat4 mat_transform);
+int world_draw_chunk(world *w, mat4 mat_transform);
+
+int world_update_chunk(world *w);
+
 int world_block_dump(world *w);
 
 world_preset *super_flat_preset_get(super_flat_preset_idx idx);
