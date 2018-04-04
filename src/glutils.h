@@ -70,6 +70,9 @@ void gl_vertices_free(vec3 **positions, vec3 **normals, vec2 **uvs);
  * VBOs
  */
 
+#define GL_VBO_ENABLED                  (1)
+#define GL_VBO_DISABLED                 (0)
+
 typedef struct gl_vbo {
         seqlist indices;
         seqlist vbo_attrs;
