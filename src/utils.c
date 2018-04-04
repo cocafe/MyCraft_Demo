@@ -5,6 +5,11 @@
 #include <errno.h>
 #include <math.h>
 #include <float.h>
+#include <unistd.h>
+
+#ifdef __MINGW32__
+#include <windows.h>
+#endif
 
 #include "debug.h"
 #include "utils.h"
@@ -315,6 +320,19 @@ int buf_free(char **buf)
         *buf = NULL;
 
         return 0;
+}
+
+long get_cpu_count(void)
+{
+#ifdef __MINGW32__
+        SYSTEM_INFO sysinfo;
+
+        GetSystemInfo(&sysinfo);
+
+        return sysinfo.dwNumberOfProcessors;
+#else /* POSIX extension */
+        return sysconf(_SC_NPROCESSORS_ONLN);
+#endif
 }
 
 void image_vertical_flip(uint8_t *data, uint32_t width, uint32_t height)
