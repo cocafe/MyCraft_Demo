@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <memory.h>
 #include <errno.h>
 
 #include <GL/glew.h>
@@ -31,7 +32,7 @@ int vertex_array_delete(GLuint *vertex_array)
         return 0;
 }
 
-GLuint buffer_create(void *data, GLsizei size)
+GLuint buffer_create(void *data, GLsizeiptr size)
 {
         GLuint buffer;
 
@@ -40,6 +41,17 @@ GLuint buffer_create(void *data, GLsizei size)
         glBufferData(GL_ARRAY_BUFFER, size, data, GL_STATIC_DRAW);
 
         glBindBuffer(GL_ARRAY_BUFFER, GL_BUFFER_NONE);
+
+        return buffer;
+}
+
+GLuint buffer_element_create(void *data, GLsizeiptr size)
+{
+        GLuint buffer;
+
+        glGenBuffers(1, &buffer);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, data, GL_STATIC_DRAW);
 
         return buffer;
 }
@@ -270,6 +282,213 @@ int texture_delete(GLuint *texture)
         return 0;
 }
 
+int gl_vertices_alloc(vec3 **positions, vec3 **normals, vec2 **uvs, size_t count)
+{
+        if (!positions || !normals || !uvs)
+                return -EINVAL;
+
+        *positions = memalloc(sizeof(vec3) * count);
+        if (!*positions) {
+                pr_err_alloc();
+                return -ENOMEM;
+        }
+
+        *normals = memalloc(sizeof(vec3) * count);
+        if (!*normals) {
+                pr_err_alloc();
+                goto free_vertex;
+        }
+
+        *uvs = memalloc(sizeof(vec2) * count);
+        if (!*uvs) {
+                pr_err_alloc();
+                goto free_normal;
+        }
+
+        return 0;
+
+free_vertex:
+        memfree((void **)positions);
+
+free_normal:
+        memfree((void **)normals);
+
+        return -ENOMEM;
+}
+
+void gl_vertices_free(vec3 **positions, vec3 **normals, vec2 **uvs)
+{
+        if (!positions || !normals || !uvs)
+                return;
+
+        memfree((void **)positions);
+        memfree((void **)normals);
+        memfree((void **)uvs);
+}
+
+/**
+ * VBOs
+ */
+
+#define GL_VBO_EXPAND_COUNT                     (32)
+
+int gl_vbo_init(gl_vbo *vbo)
+{
+        int ret;
+
+        if (!vbo)
+                return -EINVAL;
+
+        ret = seqlist_init(&vbo->indices, sizeof(uint32_t), GL_VBO_EXPAND_COUNT);
+        if (ret) {
+                goto err;
+        }
+
+        ret = seqlist_init(&vbo->vbo_attrs, sizeof(vertex_attr), GL_VBO_EXPAND_COUNT);
+        if (ret) {
+                goto err;
+        }
+
+        return 0;
+
+err:
+        // seqlist_deinit() will validate data itself
+        seqlist_deinit(&vbo->indices);
+        seqlist_deinit(&vbo->vbo_attrs);
+        return ret;
+}
+
+int gl_vbo_deinit(gl_vbo *vbo)
+{
+        if (!vbo)
+                return -EINVAL;
+
+        seqlist_deinit(&vbo->indices);
+        seqlist_deinit(&vbo->vbo_attrs);
+
+        return 0;
+}
+
+int vertex_is_indexed(seqlist *vbo_list, vertex_attr *new_attr, uint32_t *idx)
+{
+        // FIXME: Linear search
+        for (uint32_t i = 0; i < vbo_list->count_utilized; ++i) {
+                vertex_attr *attr = &((vertex_attr *)vbo_list->data)[i];
+
+                if (vec3_equal(attr->position, new_attr->position) &&
+                    vec3_equal(attr->normal, new_attr->normal) &&
+                    vec2_equal(attr->uv, new_attr->uv)) {
+                        *idx = i;
+                        return 1;
+                }
+        }
+
+        return 0;
+}
+
+int gl_vbo_index(gl_vbo *vbo, vertex_attr *vertices, uint32_t vertex_count)
+{
+        for (uint32_t i = 0; i < vertex_count; ++i) {
+                vertex_attr *vertex_pack = &vertices[i];
+                uint32_t idx;
+
+                if (vertex_is_indexed(&vbo->vbo_attrs, vertex_pack, &idx)) {
+                        seqlist_append(&vbo->indices, &idx);
+                } else {
+                        uint32_t new_idx = (uint32_t)vbo->vbo_attrs.count_utilized;
+
+                        seqlist_append(&vbo->indices, &new_idx);
+                        seqlist_append(&vbo->vbo_attrs, vertex_pack);
+                }
+        }
+
+        seqlist_shrink(&vbo->indices);
+        seqlist_shrink(&vbo->vbo_attrs);
+
+        return 0;
+}
+
+void gl_vbo_vertices_copy(gl_vbo *vbo, vec3 *vertex, vec3 *normal, vec2 *uv)
+{
+        for (size_t i = 0; i < vbo->vbo_attrs.count_utilized; ++i) {
+                vertex_attr *attr = &((vertex_attr *)vbo->vbo_attrs.data)[i];
+
+                memcpy(&vertex[i], attr->position, sizeof(vec3));
+                memcpy(&normal[i], attr->normal, sizeof(vec3));
+                memcpy(&uv[i], attr->uv, sizeof(vec2));
+        }
+}
+
+int gl_vbo_buffer_create(gl_vbo *vbo, gl_attr *glattr)
+{
+        vec2 *uvs;
+        vec3 *normals;
+        vec3 *positions;
+        size_t vertex_count;
+        int ret;
+
+        if (!vbo || !glattr)
+                return -EINVAL;
+
+        vertex_count = vbo->vbo_attrs.count_utilized;
+
+        gl_vertices_alloc(&positions, &normals, &uvs, vertex_count);
+        gl_vbo_vertices_copy(vbo, positions, normals, uvs);
+
+        glattr->vertex_count = (GLsizei)vbo->indices.count_utilized;
+        glattr->vbo_index = buffer_element_create(vbo->indices.data,
+                                                  vbo->indices.element_size *
+                                                  vbo->indices.count_utilized);
+        ret = glIsBuffer(glattr->vbo_index);
+        if (ret == GL_FALSE) {
+                pr_err_func("failed to create vertex indexed buffer\n");
+                goto free_alloc;
+        }
+
+        glattr->vertex = buffer_create(positions, sizeof(vec3) * vertex_count);
+        ret = glIsBuffer(glattr->vertex);
+        if (ret == GL_FALSE) {
+                pr_err_func("failed to create vertex buffer\n");
+                goto del_indices;
+        }
+
+        glattr->vertex_nrm = buffer_create(normals, sizeof(vec3) * vertex_count);
+        ret = glIsBuffer(glattr->vertex_nrm);
+        if (ret == GL_FALSE) {
+                pr_err_func("failed to create vertex normal buffer\n");
+                goto del_vertex;
+        }
+
+        glattr->vertex_uv = buffer_create(uvs, sizeof(vec3) * vertex_count);
+        ret = glIsBuffer(glattr->vertex_uv);
+        if (ret == GL_FALSE) {
+                pr_err_func("failed to create vertex uv buffer\n");
+                goto del_normal;
+        }
+
+free_alloc:
+        gl_vertices_free(&positions, &normals, &uvs);
+
+        return ret;
+
+del_indices:
+        buffer_delete(&glattr->vbo_index);
+
+del_vertex:
+        buffer_delete(&glattr->vertex);
+
+del_normal:
+        buffer_delete(&glattr->vertex_nrm);
+
+        goto free_alloc;
+}
+
+void gl_vbo_buffer_delete(gl_attr *glattr)
+{
+        buffer_delete(&glattr->vbo_index);
+        buffer_delete(&glattr->vertex);
+        buffer_delete(&glattr->vertex_nrm);
+}
 
 /**
  * FPS Meter

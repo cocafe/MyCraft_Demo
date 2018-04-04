@@ -3,6 +3,8 @@
 
 #include "../lib/png_loader.h"
 
+#include "utils.h"
+
 #define GL_VAO_NONE                     (0)
 #define GL_SHADER_NONE                  (0)
 #define GL_BUFFER_NONE                  (0)
@@ -18,11 +20,19 @@ typedef enum texel_filter {
         NR_TEXEL_FILTER,
 } texel_filter;
 
+typedef struct vertex_attr {
+        vec3 position;
+        vec3 normal;
+        vec2 uv;
+} vertex_attr;
+
 typedef struct gl_attr {
         GLuint  program;        // program
+        GLuint  vbo_index;      // buffer
         GLuint  vertex;         // buffer
+        GLuint  vertex_uv;      // buffer
         GLuint  vertex_nrm;     // buffer
-        GLuint  uv;             // buffer
+        GLsizei vertex_count;
         GLuint  texel;          // texture
         GLint   sampler;        // uniform
         GLint   mat_transform;  // uniform
@@ -37,7 +47,8 @@ typedef struct gl_attr {
 GLuint vertex_array_create(void);
 int vertex_array_delete(GLuint *vertex_array);
 
-GLuint buffer_create(void *data, GLsizei size);
+GLuint buffer_create(void *data, GLsizeiptr size);
+GLuint buffer_element_create(void *data, GLsizeiptr size);
 int buffer_delete(GLuint *buffer);
 
 GLuint shader_compile(GLenum type, const char *source);
@@ -51,6 +62,26 @@ int program_delete(GLuint *program);
 
 GLuint texture_png_create(image_png *png, int32_t filter_level);
 int texture_delete(GLuint *texture);
+
+int gl_vertices_alloc(vec3 **positions, vec3 **normals, vec2 **uvs, size_t count);
+void gl_vertices_free(vec3 **positions, vec3 **normals, vec2 **uvs);
+
+/**
+ * VBOs
+ */
+
+typedef struct gl_vbo {
+        seqlist indices;
+        seqlist vbo_attrs;
+} gl_vbo;
+
+int gl_vbo_init(gl_vbo *vbo);
+int gl_vbo_deinit(gl_vbo *vbo);
+
+int gl_vbo_index(gl_vbo *vbo, vertex_attr *vertices, uint32_t vertex_count);
+
+int gl_vbo_buffer_create(gl_vbo *vbo, gl_attr *glattr);
+void gl_vbo_buffer_delete(gl_attr *glattr);
 
 /**
  * FPS Meter
