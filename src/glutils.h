@@ -63,6 +63,9 @@ int program_delete(GLuint *program);
 GLuint texture_png_create(image_png *png, int32_t filter_level);
 int texture_delete(GLuint *texture);
 
+int gl_attr_init(gl_attr *attr);
+int gl_attr_buffer_delete(gl_attr *attr);
+
 int gl_vertices_alloc(vec3 **positions, vec3 **normals, vec2 **uvs, size_t count);
 void gl_vertices_free(vec3 **positions, vec3 **normals, vec2 **uvs);
 

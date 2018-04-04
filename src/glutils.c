@@ -282,6 +282,45 @@ int texture_delete(GLuint *texture)
         return 0;
 }
 
+int gl_attr_init(gl_attr *attr)
+{
+        if (!attr)
+                return -EINVAL;
+
+        memzero(attr, sizeof(gl_attr));
+
+        return 0;
+}
+
+int gl_attr_buffer_delete(gl_attr *attr)
+{
+        if (!attr)
+                return -EINVAL;
+
+        if (glIsBuffer(attr->vbo_index) != GL_FALSE)
+                buffer_delete(&attr->vbo_index);
+
+        if (glIsBuffer(attr->vertex) != GL_FALSE)
+                buffer_delete(&attr->vertex);
+
+        if (glIsBuffer(attr->vertex) != GL_FALSE)
+                buffer_delete(&attr->vertex_nrm);
+
+        if (glIsBuffer(attr->vertex_uv) != GL_FALSE)
+                buffer_delete(&attr->vertex_uv);
+
+        if (glIsBuffer(attr->buffer_1) != GL_FALSE)
+                buffer_delete(&attr->buffer_1);
+
+        if (glIsBuffer(attr->buffer_2) != GL_FALSE)
+                buffer_delete(&attr->buffer_2);
+
+        if (glIsBuffer(attr->buffer_3) != GL_FALSE)
+                buffer_delete(&attr->buffer_3);
+
+        return 0;
+}
+
 int gl_vertices_alloc(vec3 **positions, vec3 **normals, vec2 **uvs, size_t count)
 {
         if (!positions || !normals || !uvs)
