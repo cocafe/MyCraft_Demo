@@ -498,7 +498,7 @@ int gl_vbo_buffer_create(gl_vbo *vbo, gl_attr *glattr)
                 goto del_vertex;
         }
 
-        glattr->vertex_uv = buffer_create(uvs, sizeof(vec3) * vertex_count);
+        glattr->vertex_uv = buffer_create(uvs, sizeof(vec2) * vertex_count);
         ret = glIsBuffer(glattr->vertex_uv);
         if (ret == GL_FALSE) {
                 pr_err_func("failed to create vertex uv buffer\n");
