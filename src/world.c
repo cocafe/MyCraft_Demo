@@ -135,6 +135,42 @@ int block_in_chunk(ivec3 origin_block, int chunk_length, ivec3 origin_chunk)
         return 0;
 }
 
+int block_draw(block *b, mat4 mat_transform, int vbo_enabled)
+{
+        if (!b)
+                return -EINVAL;
+
+        if (!b->blk_attr->visible)
+                return 0;
+
+        if (b->model == NULL) {
+                vec3 origin_gl = { 0 };
+                b->model = memalloc(sizeof(block_model));
+                if (!b->model)
+                        return -ENOMEM;
+
+                coordinate_local_to_gl(b->origin_l, BLOCK_EDGE_LEN_GLUNIT, origin_gl);
+
+                block_model_init(b->model, origin_gl);
+                block_model_faces_alloc(b->model);
+                block_model_faces_generate(b->model, b->blk_attr);
+
+                if (!vbo_enabled)
+                        block_model_gl_attr(b->model, b->blk_attr);
+                else
+                        block_model_gl_attr_vbo(b->model, b->blk_attr);
+
+                block_model_faces_free(b->model);
+        }
+
+        if (!vbo_enabled)
+                block_model_draw(b->model, mat_transform);
+        else
+                block_model_draw_indexed(b->model, mat_transform);
+
+        return 0;
+}
+
 int chunk_init(chunk *c, ivec3 origin_chunk)
 {
         if (!c)
@@ -347,34 +383,6 @@ int world_del_block(world *w, ivec3 origin_block)
         return 0;
 }
 
-int block_draw(block *b, mat4 mat_transform)
-{
-        // TODO: Cache model data optimization
-
-        if (!b)
-                return -EINVAL;
-
-        if (!b->blk_attr->visible)
-                return 0;
-
-        // TODO: Check whether block should be rendered
-        if (b->model == NULL) {
-                vec3 origin_gl = { 0 };
-                b->model = memalloc(sizeof(block_model));
-                if (!b->model)
-                        return -ENOMEM;
-
-                coordinate_local_to_gl(b->origin_l, BLOCK_EDGE_LEN_GLUNIT, origin_gl);
-
-                block_model_init(b->model, origin_gl);
-                block_model_generate(b->model, b->blk_attr);
-        }
-
-        block_model_draw(b->model, mat_transform);
-
-        return 0;
-}
-
 // TODO: Render visible block only (Important optimization)
 int chunk_draw_block(chunk *c, mat4 mat_transform)
 {
@@ -384,7 +392,7 @@ int chunk_draw_block(chunk *c, mat4 mat_transform)
                 return -EINVAL;
 
         linklist_for_each_node(pos, c->blocks->head) {
-                block_draw(pos->data, mat_transform);
+                block_draw(pos->data, mat_transform, GL_VBO_ENABLED);
         }
 
 
