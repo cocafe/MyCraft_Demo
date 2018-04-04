@@ -106,11 +106,8 @@ static block_shader *block_shader_list[] = {
                 },                                              \
         }
 
-static block_attr block_test = {
-        .name = "testy",
-
-        BLOCK_DIMENSION_CUBE,
-        BLOCK_MODEL_CUBE,
+static block_attr block_dummy = {
+        .name = "dummy",
 
         .texel = {
                 .textured = 1,
@@ -128,9 +125,6 @@ static block_attr block_test = {
 
         .visible = 1,
         .shader = BLK_SHADER_GENERIC,
-
-        .destroyable = 1,
-        .throughable = 0,
 };
 
 static block_attr block_air = {
@@ -268,7 +262,7 @@ static block_attr *block_attr_list[] = {
         [BLOCK_STONE]           = &block_stone,
         [BLOCK_TNT]             = &block_tnt,
         [BLOCK_GLASS]           = &block_glass,
-        [BLOCK_TEST]            = &block_test,
+        [BLOCK_DUMMY]           = &block_dummy,
         NULL,
 };
 

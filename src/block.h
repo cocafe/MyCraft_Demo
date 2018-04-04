@@ -63,7 +63,7 @@ typedef enum block_attr_idx {
         BLOCK_STONE,
         BLOCK_TNT,
         BLOCK_GLASS,
-        BLOCK_TEST,
+        BLOCK_DUMMY,
         NR_BLOCK_TYPE,
 } block_attr_idx;
 
