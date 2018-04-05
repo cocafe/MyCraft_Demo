@@ -23,13 +23,13 @@ typedef struct block {
 } block;
 
 typedef enum chunk_state {
-        CHUNK_UNKNOWN = 0,
-        CHUNK_INITED,
-        CHUNK_PREPARED,
-        CHUNK_PREPARING,
-        CHUNK_UPDATED,
-        CHUNK_UPDATING,
-        CHUNK_NEED_UPDATE,
+        CHUNK_UNKNOWN = 0,      // Undefined
+        CHUNK_INITED,           // Ready
+        CHUNK_PREPARED,         // Ready
+        CHUNK_PREPARING,        // Updating vertices (WR locked)
+        CHUNK_UPDATED,          // Ready
+        CHUNK_UPDATING,         // Updating GL data
+        CHUNK_NEED_UPDATE,      // Need to update, or world just inited
         NR_CHUNK_STATES,
 } chunk_state;
 
@@ -64,8 +64,6 @@ int block_in_chunk(ivec3 origin_block, int chunk_length, ivec3 origin_chunk);
 int chunk_init(chunk *c, ivec3 origin_chunk);
 int chunk_deinit(chunk *c);
 
-linklist_node *chunk_get_block_node(chunk *c, ivec3 origin_block);
-
 block *chunk_get_block(chunk *c, ivec3 origin_block);
 block *chunk_add_block(chunk *c, block *b);
 int chunk_del_block(chunk *c, ivec3 origin_block);
@@ -76,9 +74,12 @@ chunk *world_get_chunk(world *w, ivec3 origin_chunk);
 int world_add_block(world *w, block *b);
 int world_del_block(world *w, ivec3 origin_block);
 
-int world_prepare_chunk(world *w);
-int world_update_chunk(world *w);
-int world_draw_chunk(world *w, mat4 mat_transform);
+int chunk_set_blocks(chunk *c, world *w);
+int world_set_blocks(world *w, int init, int trap);
+
+int world_prepare_chunks(world *w);
+int world_update_chunks(world *w);
+int world_draw_chunks(world *w, mat4 mat_transform);
 
 int world_init(world *w);
 int world_deinit(world *w);

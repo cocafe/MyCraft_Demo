@@ -15,6 +15,16 @@
 #include "glutils.h"
 #include "chunks.h"
 
+// Normalized, not rotated
+static ivec3 block_normals[] = {
+        [CUBE_FRONT]    = {  0,  0,  1 },
+        [CUBE_BACK]     = {  0,  0, -1 },
+        [CUBE_TOP]      = {  0,  1,  0 },
+        [CUBE_BOTTOM]   = {  0, -1,  0 },
+        [CUBE_LEFT]     = { -1,  0,  0 },
+        [CUBE_RIGHT]    = {  1,  0,  0 },
+};
+
 static inline float __local_to_gl(int x, int l)
 {
         int coef = (x < 0) ? (-1) : (1);
@@ -52,30 +62,6 @@ void coordinate_local_to_gl(const ivec3 local, int edge_len, vec3 gl)
         gl[Z] = __local_to_gl(local[Z], edge_len);
 }
 
-int block_init_model(block *b)
-{
-        vec3 origin_gl = { 0 };
-
-        if (!b)
-                return -EINVAL;
-
-        coordinate_local_to_gl(b->origin_l, BLOCK_EDGE_LEN_GLUNIT, origin_gl);
-
-        block_model_init(&b->model, origin_gl);
-
-        return 0;
-}
-
-int block_deinit_model(block *b)
-{
-        if (!b)
-                return -EINVAL;
-
-        block_model_deinit(&b->model);
-
-        return 0;
-}
-
 static inline int __block_in_chunk(int x, int stride)
 {
         return (x / stride);
@@ -110,15 +96,21 @@ int block_in_chunk(ivec3 origin_block, int chunk_length, ivec3 origin_chunk)
  */
 int block_init(block *b, block_attr *blk_attr, ivec3 origin_block)
 {
+        vec3 origin_gl = { 0.0f };
+
         if (!b || !blk_attr)
                 return -EINVAL;
 
         memzero(b, sizeof(block));
 
-        memcpy(b->origin_l, origin_block, sizeof(ivec3));
         b->blk_attr = blk_attr;
 
+        memcpy(b->origin_l, origin_block, sizeof(ivec3));
+        coordinate_local_to_gl(b->origin_l, BLOCK_EDGE_LEN_GLUNIT, origin_gl);
+
         /* TODO: axis */
+
+        block_model_init(&b->model, origin_gl);
 
         return 0;
 }
@@ -128,8 +120,7 @@ int block_deinit(block *b)
         if (!b)
                 return -EINVAL;
 
-        // Just in case
-        block_deinit_model(b);
+        block_model_deinit(&b->model);
 
         return 0;
 }
@@ -215,18 +206,25 @@ static inline int chunk_state_get(chunk *c, int flag)
         return state;
 }
 
-linklist_node *chunk_get_block_node(chunk *c, ivec3 origin_block)
+static inline int chunk_state_ready(chunk *c)
+{
+        return (chunk_state_get(c, L_WAIT) == CHUNK_INITED) ||
+               (chunk_state_get(c, L_WAIT) == CHUNK_UPDATED) ||
+               (chunk_state_get(c, L_WAIT) == CHUNK_PREPARED);
+}
+
+static inline linklist_node *chunk_get_block_node(chunk *c, ivec3 origin_b)
 {
         linklist_node *pos;
         linklist_node *ret = NULL;
 
         if (!c)
-                return NULL;
+                return ret;
 
         linklist_for_each_node(pos, c->blocks->head) {
                 block *b = pos->data;
 
-                if (ivec3_equal(b->origin_l, origin_block)) {
+                if (ivec3_equal(b->origin_l, origin_b)) {
                         ret = pos;
                         break;
                 }
@@ -238,17 +236,21 @@ linklist_node *chunk_get_block_node(chunk *c, ivec3 origin_block)
 block *chunk_get_block(chunk *c, ivec3 origin_block)
 {
         linklist_node *node;
-        block *b = NULL;
+        block *ret = NULL;
 
         pthread_rwlock_rdlock(&c->rwlock);
 
+        if (linklist_is_empty(c->blocks))
+                goto out;
+
         node = chunk_get_block_node(c, origin_block);
         if (node)
-                b = node->data;
+                ret = node->data;
 
+out:
         pthread_rwlock_unlock(&c->rwlock);
 
-        return b;
+        return ret;
 }
 
 block *chunk_add_block(chunk *c, block *b)
@@ -315,20 +317,43 @@ chunk *world_add_chunk(world *w, ivec3 origin_chunk)
 
 chunk *world_get_chunk(world *w, ivec3 origin_chunk)
 {
-        chunk *c;
         linklist_node *pos;
+        chunk *ret = NULL;
 
         if (linklist_is_empty(w->chunks))
-                return NULL;
+                goto out;
 
         linklist_for_each_node(pos, w->chunks->head) {
-                c = pos->data;
+                chunk *c = pos->data;
 
-                if (ivec3_equal(origin_chunk, c->origin_l))
-                        return c;
+                if (ivec3_equal(c->origin_l, origin_chunk)) {
+                        ret = c;
+                        break;
+                }
         }
 
-        return NULL;
+out:
+        return ret;
+}
+
+block *world_get_block(world *w, ivec3 origin_block)
+{
+        ivec3 origin_chunk = { 0 };
+        chunk *c;
+        block *b;
+
+        if (!w)
+                return NULL;
+
+        block_in_chunk(origin_block, w->chunk_length, origin_chunk);
+
+        c = world_get_chunk(w, origin_chunk);
+        if (!c)
+                return NULL;
+
+        b = chunk_get_block(c, origin_block);
+
+        return b;
 }
 
 int world_add_block(world *w, block *b)
@@ -431,14 +456,12 @@ int chunk_draw(chunk *c, mat4 mat_transform)
  * @param mat_transform: perspective transform matrix
  * @return 0 on success
  */
-int world_draw_chunk(world *w, mat4 mat_transform)
+int world_draw_chunks(world *w, mat4 mat_transform)
 {
         linklist_node *pos;
 
         if (!w)
                 return -EINVAL;
-
-        glEnable(GL_CULL_FACE);
 
         linklist_for_each_node(pos, w->chunks->head) {
                 chunk *c = pos->data;
@@ -446,8 +469,6 @@ int world_draw_chunk(world *w, mat4 mat_transform)
                 if (chunk_state_get(c, L_NOWAIT) == CHUNK_UPDATED)
                         chunk_draw(pos->data, mat_transform);
         }
-
-        glDisable(GL_CULL_FACE);
 
         return 0;
 }
@@ -462,7 +483,6 @@ int chunk_vertices_pack(chunk *c)
         linklist_for_each_node(pos, c->blocks->head) {
                 block *b = pos->data;
 
-                block_init_model(b);
                 block_model_face_init(&b->model);
                 block_model_face_generate(&b->model, b->blk_attr);
 
@@ -477,7 +497,7 @@ int chunk_vertices_pack(chunk *c)
                         }
                 }
 
-                block_deinit_model(b);
+                block_model_face_deinit(&b->model);
         }
 
         seqlist_shrink(c->vertices);
@@ -604,7 +624,7 @@ void *chunk_prepare_worker(void *data)
         return NULL;
 }
 
-int world_prepare_chunk(world *w)
+int world_prepare_chunks(world *w)
 {
         linklist_node *pos;
 
@@ -621,7 +641,7 @@ int world_prepare_chunk(world *w)
         return 0;
 }
 
-int world_update_chunk(world *w)
+int world_update_chunks(world *w)
 {
         linklist_node *pos;
 
@@ -642,6 +662,74 @@ int world_update_chunk(world *w)
         return 0;
 }
 
+static inline void block_near_origin_get(block *b, int f, ivec3 origin_near)
+{
+        if (!b)
+                return;
+
+        // XXX: if BLOCK_EDGE_LEN_GLUNIT != 1, this will be incorrect
+        origin_near[X] += b->origin_l[X] + block_normals[f][X];
+        origin_near[Y] += b->origin_l[Y] + block_normals[f][Y];
+        origin_near[Z] += b->origin_l[Z] + block_normals[f][Z];
+}
+
+int chunk_set_blocks(chunk *c, world *w)
+{
+        linklist_node *pos;
+
+        if (!c)
+                return -EINVAL;
+
+        pthread_rwlock_rdlock(&c->rwlock);
+
+        linklist_for_each_node(pos, c->blocks->head) {
+                block *b = pos->data;
+
+                for (int i = 0; i < CUBE_QUAD_FACES; ++i) {
+                        block_face *f = &(b->model.faces[i]);
+                        ivec3 o_near = { 0 };
+                        block *b_near;
+
+                        block_near_origin_get(b, i, o_near);
+                        b_near = world_get_block(w, o_near);
+
+                        if (!b_near)
+                                f->visible = 1;
+                        else
+                                f->visible = 0;
+                }
+        }
+
+        pthread_rwlock_unlock(&c->rwlock);
+
+        return 0;
+}
+
+int world_set_blocks(world *w, int init, int trap)
+{
+        linklist_node *pos;
+
+        if (!w)
+                return -EINVAL;
+
+        linklist_for_each_node(pos, w->chunks->head) {
+                chunk *c = pos->data;
+
+                if (!init) {
+                        while (1) {
+                                if (chunk_state_ready(c))
+                                        break;
+                                else if (!trap)
+                                        break;
+                        }
+                }
+
+                chunk_set_blocks(c, w);
+        }
+
+        return 0;
+}
+
 int world_init(world *w)
 {
         if (!w)
@@ -657,13 +745,6 @@ int world_init(world *w)
         linklist_init(w->chunks, sizeof(chunk));
 
         return 0;
-}
-
-static inline int chunk_state_ready(chunk *c)
-{
-        return (chunk_state_get(c, L_WAIT) == CHUNK_INITED) ||
-               (chunk_state_get(c, L_WAIT) == CHUNK_UPDATED) ||
-               (chunk_state_get(c, L_WAIT) == CHUNK_PREPARED);
 }
 
 int world_deinit(world *w)
