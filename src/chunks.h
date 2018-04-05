@@ -19,7 +19,7 @@ typedef struct block {
         vec3            axis[3];
 
         block_attr      *blk_attr;
-        block_model     *model;
+        block_model     model;
 } block;
 
 typedef enum chunk_state {
@@ -61,9 +61,6 @@ int block_deinit(block *b);
 
 int block_in_chunk(ivec3 origin_block, int chunk_length, ivec3 origin_chunk);
 
-int block_draw(block *b, mat4 mat_transform, int use_vbo);
-int block_dump(block *b);
-
 int chunk_init(chunk *c, ivec3 origin_chunk);
 int chunk_deinit(chunk *c);
 
@@ -72,24 +69,18 @@ linklist_node *chunk_get_block_node(chunk *c, ivec3 origin_block);
 block *chunk_get_block(chunk *c, ivec3 origin_block);
 block *chunk_add_block(chunk *c, block *b);
 int chunk_del_block(chunk *c, ivec3 origin_block);
-int chunk_draw_block(chunk *c, mat4 mat_transform);
-
-int chunk_dump(chunk *c);
-
-int world_init(world *w);
-int world_deinit(world *w);
 
 chunk *world_add_chunk(world *w, ivec3 origin_chunk);
 chunk *world_get_chunk(world *w, ivec3 origin_chunk);
 
 int world_add_block(world *w, block *b);
 int world_del_block(world *w, ivec3 origin_block);
-int world_draw_block(world *w, mat4 mat_transform);
 
 int world_prepare_chunk(world *w);
 int world_update_chunk(world *w);
 int world_draw_chunk(world *w, mat4 mat_transform);
 
-int world_dump(world *w);
+int world_init(world *w);
+int world_deinit(world *w);
 
 #endif //MYCRAFT_DEMO_CHUNKS_H

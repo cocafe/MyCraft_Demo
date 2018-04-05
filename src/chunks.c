@@ -61,8 +61,7 @@ int block_init_model(block *b)
 
         coordinate_local_to_gl(b->origin_l, BLOCK_EDGE_LEN_GLUNIT, origin_gl);
 
-        block_model_alloc(&b->model);
-        block_model_init(b->model, origin_gl);
+        block_model_init(&b->model, origin_gl);
 
         return 0;
 }
@@ -72,39 +71,9 @@ int block_deinit_model(block *b)
         if (!b)
                 return -EINVAL;
 
-        if (b->model) {
-                block_model_deinit(b->model);
-                block_model_free(&b->model);
-        }
+        block_model_deinit(&b->model);
 
         return 0;
-}
-
-void block_generate_vertices(block *b)
-{
-        block_model_faces_alloc(b->model);
-        block_model_faces_generate(b->model, b->blk_attr);
-}
-
-void block_generate_gl_attr(block *b, int use_vbo)
-{
-        if (!use_vbo)
-                block_model_gl_attr(b->model, b->blk_attr);
-        else
-                block_model_gl_attr_vbo(b->model, b->blk_attr);
-}
-
-void block_free_vertices(block *b)
-{
-        block_model_faces_free(b->model);
-}
-
-void block_draw_model(block *b, mat4 mat_transform, int use_vbo)
-{
-        if (!use_vbo)
-                block_model_draw(b->model, mat_transform);
-        else
-                block_model_draw_indexed(b->model, mat_transform);
 }
 
 static inline int __block_in_chunk(int x, int stride)
@@ -159,6 +128,7 @@ int block_deinit(block *b)
         if (!b)
                 return -EINVAL;
 
+        // Just in case
         block_deinit_model(b);
 
         return 0;
@@ -268,20 +238,17 @@ linklist_node *chunk_get_block_node(chunk *c, ivec3 origin_block)
 block *chunk_get_block(chunk *c, ivec3 origin_block)
 {
         linklist_node *node;
+        block *b = NULL;
 
         pthread_rwlock_rdlock(&c->rwlock);
 
         node = chunk_get_block_node(c, origin_block);
-        if (node == NULL) {
-                pr_err_func("block (%d, %d, %d) not found in chunk (%d, %d, %d)\n",
-                            origin_block[X], origin_block[Y], origin_block[Z],
-                            c->origin_l[X], c->origin_l[Y], c->origin_l[Z]);
-                return NULL;
-        }
+        if (node)
+                b = node->data;
 
         pthread_rwlock_unlock(&c->rwlock);
 
-        return node->data;
+        return b;
 }
 
 block *chunk_add_block(chunk *c, block *b)
@@ -328,54 +295,6 @@ int chunk_del_block(chunk *c, ivec3 origin_block)
 
 out:
         pthread_rwlock_unlock(&c->rwlock);
-
-        return 0;
-}
-
-int world_init(world *w)
-{
-        if (!w)
-                return -EINVAL;
-
-        memzero(w, sizeof(world));
-
-        w->chunk_length = CHUNK_EDGE_LEN_GLUNIT;
-        w->height_max = WORLD_HEIGHT_MAX; /* -1 */
-        w->height_min = WORLD_HEIGHT_MIN;
-
-        linklist_alloc(&w->chunks);
-        linklist_init(w->chunks, sizeof(chunk));
-
-        return 0;
-}
-
-static inline int chunk_state_ready(chunk *c)
-{
-        return (chunk_state_get(c, L_WAIT) == CHUNK_INITED) ||
-               (chunk_state_get(c, L_WAIT) == CHUNK_UPDATED) ||
-               (chunk_state_get(c, L_WAIT) == CHUNK_PREPARED);
-}
-
-int world_deinit(world *w)
-{
-        linklist_node *pos;
-
-        if (!w)
-                return -EINVAL;
-
-        linklist_for_each_node(pos, w->chunks->head) {
-                chunk *c = pos->data;
-
-                while (1) {
-                        if (chunk_state_ready(c))
-                                break;
-                }
-
-                chunk_deinit(c);
-        }
-
-        linklist_deinit(w->chunks);
-        linklist_free(&w->chunks);
 
         return 0;
 }
@@ -456,63 +375,6 @@ int world_del_block(world *w, ivec3 origin_block)
         }
 
         chunk_del_block(c, origin_block);
-
-        return 0;
-}
-
-int block_draw(block *b, mat4 mat_transform, int use_vbo)
-{
-        if (!b)
-                return -EINVAL;
-
-        if (!b->blk_attr->visible)
-                return 0;
-
-        if (b->model == NULL) {
-                block_init_model(b);
-                block_generate_vertices(b);
-                block_generate_gl_attr(b, use_vbo);
-                block_free_vertices(b);
-        }
-
-        block_draw_model(b, mat_transform, use_vbo);
-
-        return 0;
-}
-
-int chunk_draw_block(chunk *c, mat4 mat_transform)
-{
-        linklist_node *pos;
-
-        if (!c)
-                return -EINVAL;
-
-        linklist_for_each_node(pos, c->blocks->head) {
-                block_draw(pos->data, mat_transform, GL_VBO_ENABLED);
-        }
-
-        return 0;
-}
-
-/**
- * world_draw_block() - generate block models and draw by blocks
- *
- * poor performance implementation
- *
- * @param w: pointer to world container
- * @param mat_transform: perspective transform matrix
- * @return 0 on success
- */
-int world_draw_block(world *w, mat4 mat_transform)
-{
-        linklist_node *pos;
-
-        if (!w)
-                return -EINVAL;
-
-        linklist_for_each_node(pos, w->chunks->head) {
-                chunk_draw_block(pos->data, mat_transform);
-        }
 
         return 0;
 }
@@ -601,17 +463,20 @@ int chunk_vertices_pack(chunk *c)
                 block *b = pos->data;
 
                 block_init_model(b);
-                block_generate_vertices(b);
+                block_model_face_init(&b->model);
+                block_model_face_generate(&b->model, b->blk_attr);
 
                 for (int i = 0; i < CUBE_QUAD_FACES; ++i) {
-                        block_face *f = &(b->model->faces[i]);
+                        block_face *f = &(b->model.faces[i]);
+
+                        if (!f->visible)
+                                continue;
 
                         for (int j = 0; j < VERTICES_TRIANGULATE_QUAD; ++j) {
-                                seqlist_append(c->vertices, &f->vertex[j]);
+                                seqlist_append(c->vertices, &(f->vertices[j]));
                         }
                 }
 
-                block_free_vertices(b);
                 block_deinit_model(b);
         }
 
@@ -687,9 +552,10 @@ int chunk_gl_data_prepare(chunk *c)
 
         chunk_vertices_pack(c);
 
-
         gl_vbo_index(&c->glvbo, c->vertices->data,
                      (uint32_t)c->vertices->count_utilized);
+
+        chunk_vertices_free(c);
 
         c->state = CHUNK_PREPARED;
         pthread_rwlock_unlock(&c->rwlock);
@@ -718,8 +584,6 @@ int chunk_gl_data_free(chunk *c)
                 return -EINVAL;
 
         gl_vbo_deinit(&c->glvbo);
-
-        chunk_vertices_free(c);
 
         pthread_rwlock_wrlock(&c->rwlock);
         c->state = CHUNK_UPDATED;
@@ -778,54 +642,50 @@ int world_update_chunk(world *w)
         return 0;
 }
 
-int block_dump(block *b)
+int world_init(world *w)
 {
-        if (!b)
+        if (!w)
                 return -EINVAL;
 
-        pr_info("Block (%d, %d, %d) Type: %s\n",
-                b->origin_l[X], b->origin_l[Y], b->origin_l[Z],
-                b->blk_attr->name);
+        memzero(w, sizeof(world));
+
+        w->chunk_length = CHUNK_EDGE_LEN_GLUNIT;
+        w->height_max = WORLD_HEIGHT_MAX; /* -1 */
+        w->height_min = WORLD_HEIGHT_MIN;
+
+        linklist_alloc(&w->chunks);
+        linklist_init(w->chunks, sizeof(chunk));
 
         return 0;
 }
 
-int chunk_dump(chunk *c)
+static inline int chunk_state_ready(chunk *c)
 {
-        linklist_node *pos;
-
-        if (!c)
-                return -EINVAL;
-
-        pr_info("Chunk (%d, %d, %d): Block Count: %zd\n",
-                c->origin_l[X], c->origin_l[Y], c->origin_l[Z],
-                c->blocks->element_count);
-
-        linklist_for_each_node(pos, c->blocks->head) {
-                block_dump(pos->data);
-        }
-
-        return 0;
+        return (chunk_state_get(c, L_WAIT) == CHUNK_INITED) ||
+               (chunk_state_get(c, L_WAIT) == CHUNK_UPDATED) ||
+               (chunk_state_get(c, L_WAIT) == CHUNK_PREPARED);
 }
 
-int world_dump(world *w)
+int world_deinit(world *w)
 {
         linklist_node *pos;
 
         if (!w)
                 return -EINVAL;
 
-        pr_info_func("\n");
-        pr_info("Height: [%d - %d]\n", w->height_min, w->height_max);
-        pr_info("Chunk Length: %d\n", w->chunk_length);
-        pr_info("Chunk Count: %zd\n", w->chunks->element_count);
-
-        size_t i = 0;
         linklist_for_each_node(pos, w->chunks->head) {
-                pr_info("Chunk [%zd]\n", i);
-                chunk_dump(pos->data);
-                i++;
+                chunk *c = pos->data;
+
+                while (1) {
+                        if (chunk_state_ready(c))
+                                break;
+                }
+
+                chunk_deinit(c);
         }
+
+        linklist_deinit(w->chunks);
+        linklist_free(&w->chunks);
 
         return 0;
 }
