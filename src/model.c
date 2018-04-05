@@ -39,6 +39,34 @@ static vec3 cube_normals[] = {
         [CUBE_RIGHT]    = {  1.0f,  0.0f,  0.0f },
 };
 
+int block_model_alloc(block_model **model)
+{
+        if (!model)
+                return -EINVAL;
+
+        if (*model)
+                pr_err_func("block model heap is corrupted or already generated\n");
+
+        *model = memalloc(sizeof(block_model));
+        if (!*model)
+                return -ENOMEM;
+
+        return 0;
+}
+
+int block_model_free(block_model **model)
+{
+        if (!model)
+                return -EINVAL;
+
+        if (!*model)
+                return -ENODATA;
+
+        memfree((void **)model);
+
+        return 0;
+}
+
 int block_model_faces_alloc(block_model *model)
 {
         if (!model)
@@ -89,10 +117,7 @@ int block_model_deinit(block_model *model)
         }
 
         if (model->glattr) {
-                gl_attr *glattr = model->glattr;
-
-                gl_attr_buffer_delete(glattr);
-
+                gl_attr_buffer_delete(model->glattr);
                 memfree((void **)&model->glattr);
         }
 

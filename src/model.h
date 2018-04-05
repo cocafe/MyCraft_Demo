@@ -22,6 +22,9 @@ typedef struct block_model {
         block_face      *faces;
 } block_model;
 
+int block_model_alloc(block_model **model);
+int block_model_free(block_model **model);
+
 int block_model_init(block_model *model, vec3 origin_gl);
 int block_model_deinit(block_model *model);
 
