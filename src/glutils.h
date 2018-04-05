@@ -44,6 +44,12 @@ typedef struct gl_attr {
         GLint   uniform_3;
 } gl_attr;
 
+void APIENTRY opengl_debug_output_callback(GLenum source, GLenum type,
+                                           GLuint id, GLenum severity,
+                                           GLsizei length,
+                                           const GLchar *message,
+                                           const void *userParam);
+
 GLuint vertex_array_create(void);
 int vertex_array_delete(GLuint *vertex_array);
 

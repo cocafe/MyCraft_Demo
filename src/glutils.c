@@ -11,6 +11,54 @@
 #include "utils.h"
 #include "glutils.h"
 
+void APIENTRY opengl_debug_output_callback(GLenum source, GLenum type,
+                                           GLuint id, GLenum severity,
+                                           GLsizei length,
+                                           const GLchar *message,
+                                           const void *userParam)
+{
+        UNUSED_PARAM(id);
+        UNUSED_PARAM(length);
+        UNUSED_PARAM(userParam);
+
+        pr_info("OpenGL Debug Output: ");
+
+        if(source == GL_DEBUG_SOURCE_API_ARB)
+                pr_info("[API]");
+        else if(source == GL_DEBUG_SOURCE_WINDOW_SYSTEM_ARB)
+                pr_info("[WINDOW_SYSTEM]");
+        else if(source == GL_DEBUG_SOURCE_SHADER_COMPILER_ARB)
+                pr_info("[SHADER_COMPILER]");
+        else if(source == GL_DEBUG_SOURCE_THIRD_PARTY_ARB)
+                pr_info("[THIRD_PARTY]");
+        else if(source == GL_DEBUG_SOURCE_APPLICATION_ARB)
+                pr_info("[APPLICATION]");
+        else if(source == GL_DEBUG_SOURCE_OTHER_ARB)
+                pr_info("[OTHER]");
+
+        if(type == GL_DEBUG_TYPE_ERROR_ARB)
+                pr_info("[ERROR]");
+        else if(type == GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR_ARB)
+                pr_info("[DEPRECATED_BEHAVIOR]");
+        else if(type == GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR_ARB)
+                pr_info("[UNDEFINED_BEHAVIOR]");
+        else if(type == GL_DEBUG_TYPE_PORTABILITY_ARB)
+                pr_info("[PORTABILITY]");
+        else if(type == GL_DEBUG_TYPE_PERFORMANCE_ARB)
+                pr_info("[PERFORMANCE]");
+        else if(type == GL_DEBUG_TYPE_OTHER_ARB)
+                pr_info("[OTHER]");
+
+        if(severity == GL_DEBUG_SEVERITY_HIGH_ARB)
+                pr_info("[HIGH]");
+        else if(severity == GL_DEBUG_SEVERITY_MEDIUM_ARB)
+                pr_info("[MEDIUM]");
+        else if(severity == GL_DEBUG_SEVERITY_LOW_ARB)
+                pr_info("[LOW]");
+
+        pr_info("MSG: %s\n", message);
+}
+
 GLuint vertex_array_create(void)
 {
         GLuint vertex_array;
