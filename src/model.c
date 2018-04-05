@@ -39,89 +39,40 @@ static vec3 cube_normals[] = {
         [CUBE_RIGHT]    = {  1.0f,  0.0f,  0.0f },
 };
 
-int block_model_alloc(block_model **model)
+int block_model_face_init(block_model *model)
 {
+        size_t face_vertices = VERTICES_TRIANGULATE_QUAD;
+
         if (!model)
                 return -EINVAL;
 
-        if (*model)
-                pr_err_func("block model heap is corrupted or already generated\n");
+        for (int i = 0; i < CUBE_QUAD_FACES; ++i) {
+                block_face *f = &(model->faces[i]);
 
-        *model = memalloc(sizeof(block_model));
-        if (!*model)
-                return -ENOMEM;
+                if (!f->visible)
+                        continue;
 
-        return 0;
-}
-
-int block_model_free(block_model **model)
-{
-        if (!model)
-                return -EINVAL;
-
-        if (!*model)
-                return -ENODATA;
-
-        memfree((void **)model);
-
-        return 0;
-}
-
-int block_model_faces_alloc(block_model *model)
-{
-        if (!model)
-                return -EINVAL;
-
-        model->faces = memalloc(sizeof(block_face) * CUBE_QUAD_FACES);
-        if (!model->faces) {
-                pr_err_alloc();
-                return -ENOMEM;
+                f->vertices = memalloc(sizeof(vertex_attr) * face_vertices);
+                if (!f->vertices) {
+                        pr_err_alloc();
+                        return -ENOMEM;
+                }
         }
 
         return 0;
 }
 
-int block_model_faces_free(block_model *model)
+int block_model_face_deinit(block_model *model)
 {
         if (!model)
                 return -EINVAL;
 
-        memfree((void **)&model->faces);
+        for (int i = 0; i < CUBE_QUAD_FACES; ++i) {
+                block_face *f = &(model->faces[i]);
 
-        return 0;
-}
-
-int block_model_init(block_model *model, vec3 origin_gl)
-{
-        if (!model)
-                return -EINVAL;
-
-        memzero(model, sizeof(block_model));
-
-        memcpy(model->origin_gl, origin_gl, sizeof(vec3));
-
-        return 0;
-}
-
-int block_model_deinit(block_model *model)
-{
-        if (!model)
-                return -EINVAL;
-
-        if (model->faces)
-                block_model_faces_free(model);
-
-        if (model->glvbo) {
-                gl_vbo_deinit(model->glvbo);
-                memfree((void **)&model->glvbo);
+                if (f->vertices)
+                        memfree((void **)&f->vertices);
         }
-
-        if (model->glattr) {
-                gl_attr_buffer_delete(model->glattr);
-                memfree((void **)&model->glattr);
-        }
-
-        memzero(model, sizeof(block_model));
 
         return 0;
 }
@@ -132,7 +83,7 @@ static void block_model_face_vertex(block_face *face, block_attr *blk_attr,
         float w = blk_attr->size_model.width;
         float h = blk_attr->size_model.height;
         float l = blk_attr->size_model.length;
-        vertex_attr *v = face->vertex;
+        vertex_attr *v = face->vertices;
 
         switch (face_idx) {
                 case CUBE_FRONT:
@@ -270,7 +221,7 @@ static void block_model_face_uv(block_face *face, block_attr *blk_attr,
         };
 
         vec2 uv_seq[VERTICES_QUAD];
-        vertex_attr *v = face->vertex;
+        vertex_attr *v = face->vertices;
 
         if (!blk_attr->texel.textured)
                 return;
@@ -290,7 +241,7 @@ static void block_model_face_uv(block_face *face, block_attr *blk_attr,
 void block_model_face_vertex_normal(block_face *face, const vec3 origin_gl)
 {
         vec3 surround_normals[3];
-        vertex_attr *v = face->vertex;
+        vertex_attr *v = face->vertices;
 
         for (int i = 0; i < VERTICES_TRIANGULATE_QUAD; ++i) {
                 if ((v[i].position[X] - origin_gl[X]) > 0) {
@@ -319,356 +270,41 @@ void block_model_face_vertex_normal(block_face *face, const vec3 origin_gl)
         }
 }
 
-int block_model_faces_generate(block_model *model, block_attr *blk_attr)
+int block_model_face_generate(block_model *model, block_attr *blk_attr)
 {
-        block_face *faces;
-
         if (!model || !blk_attr)
                 return -EINVAL;
 
-        if (!model->faces)
-                return -ENODATA;
-
-        faces = model->faces;
-
         for (int i = 0; i < CUBE_QUAD_FACES; ++i) {
-                block_model_face_vertex(&faces[i], blk_attr, model->origin_gl, i);
-                block_model_face_vertex_normal(&faces[i], model->origin_gl);
-                block_model_face_uv(&faces[i], blk_attr, i);
+                block_face *face = &(model->faces[i]);
+
+                if (!face->visible)
+                        continue;
+
+                block_model_face_vertex(face, blk_attr, model->origin_gl, i);
+                block_model_face_vertex_normal(face, model->origin_gl);
+                block_model_face_uv(face, blk_attr, i);
         }
 
         return 0;
 }
 
-int block_model_face_vertices_copy(block_model *model, vec3 *vertices,
-                                   vec3 *normals, vec2 *uvs)
+int block_model_init(block_model *model, vec3 origin_gl)
 {
         if (!model)
                 return -EINVAL;
 
-        if (!model->faces)
-                return -ENODATA;
-
-        for (int i = 0; i < CUBE_QUAD_FACES; i++) {
-                block_face *face = &(model->faces)[i];
-                vertex_attr *pack = face->vertex;
-                int offset = i * VERTICES_TRIANGULATE_QUAD;
-
-                for (int j = 0; j < VERTICES_TRIANGULATE_QUAD; ++j) {
-                        memcpy(&uvs[offset + j], pack[j].uv, sizeof(pack[j].uv));
-                        memcpy(&normals[offset + j], pack[j].normal, sizeof(pack[j].normal));
-                        memcpy(&vertices[offset + j], pack[j].position, sizeof(pack[j].position));
-                }
-        }
+        memcpy(model->origin_gl, origin_gl, sizeof(vec3));
 
         return 0;
 }
 
-vertex_attr *block_model_vertices_pack(block_model *model)
+int block_model_deinit(block_model *model)
 {
-        vertex_attr *vertex_pack;
-        size_t vertex_count;
-
-        if (!model)
-                return NULL;
-
-        if (!model->faces)
-                return NULL;
-
-        vertex_count = VERTICES_TRIANGULATE_CUBE;
-        vertex_pack = memalloc(sizeof(vertex_attr) * vertex_count);
-        if (!vertex_pack)
-                return NULL;
-
-        for (int i = 0; i < CUBE_QUAD_FACES; ++i) {
-                block_face *face = &model->faces[i];
-                int vertex_face = VERTICES_TRIANGULATE_QUAD;
-
-                memcpy(&vertex_pack[i * vertex_face],
-                       face->vertex, sizeof(face->vertex));
-        }
-
-        return vertex_pack;
-}
-
-/**
- * block_model_gl_attr() - reserved for drawing single not indexed block
- *
- * @param model: pointer to block model
- * @param blk_attr: pointer to block style
- * @return 0 on success
- */
-int block_model_gl_attr(block_model *model, block_attr *blk_attr)
-{
-        vec3            *vertices;
-        vec3            *normals;
-        vec2            *uvs;
-
-        size_t          count = VERTICES_TRIANGULATE_CUBE;
-        int             ret;
-
         if (!model)
                 return -EINVAL;
 
-        if (!model->faces)
-                return -ENODATA;
-
-        /*
-         * Since drawing one block only is an optional
-         * feature, in order to reduce memory footprint
-         * we make it manually heap allocation instead of
-         * on stack.
-         */
-        if (model->glattr == NULL) {
-                model->glattr = memalloc(sizeof(gl_attr));
-                if (!model->glattr)
-                        return -ENOMEM;
-        }
-
-        gl_attr *glattr = model->glattr;
-
-        gl_vertices_alloc(&vertices, &normals, &uvs, count);
-
-        block_model_face_vertices_copy(model, vertices, normals, uvs);
-
-        glattr->vertex = buffer_create(vertices, sizeof(vec3) * count);
-        ret = glIsBuffer(glattr->vertex);
-        if (ret == GL_FALSE) {
-                pr_err_func("failed to create vertex buffer\n");
-                goto free_alloc;
-        }
-
-        glattr->vertex_nrm = buffer_create(normals, sizeof(vec3) * count);
-        ret = glIsBuffer(glattr->vertex);
-        if (ret == GL_FALSE) {
-                pr_err_func("failed to create vertex normal buffer\n");
-                goto del_vertex;
-        }
-
-        glattr->vertex_uv = buffer_create(uvs, sizeof(vec2) * count);
-        ret = glIsBuffer(glattr->vertex_uv);
-        if (ret == GL_FALSE) {
-                pr_err_func("failed to create vertex normal buffer\n");
-                goto del_vertex_normal;
-        }
-
-        glattr->program = block_shader_get(blk_attr->shader);
-        ret = glIsProgram(glattr->program);
-        if (ret == GL_FALSE) {
-                pr_err_func("invalid block shader program\n");
-                goto del_uv;
-        }
-
-        if (blk_attr->texel.textured) {
-                ret = glIsTexture(blk_attr->texel.texel);
-                if (ret == GL_FALSE) {
-                        pr_err_func("invalid texture object\n");
-                        goto free_alloc;
-                }
-
-                glattr->texel = blk_attr->texel.texel;
-        }
-
-        // Define amount of vertices to draw
-        glattr->vertex_count = (GLsizei)count;
-
-        glattr->sampler = glGetUniformLocation(glattr->program, "sampler");
-        glattr->mat_transform = glGetUniformLocation(glattr->program, "mat_transform");
-
-free_alloc:
-        gl_vertices_free(&vertices, &normals, &uvs);
-
-        return ret;
-
-del_uv:
-        buffer_delete(&glattr->vertex_uv);
-
-del_vertex_normal:
-        buffer_delete(&glattr->vertex_nrm);
-
-del_vertex:
-        buffer_delete(&glattr->vertex);
-
-        goto free_alloc;
-}
-
-int block_model_gl_attr_vbo(block_model *model, block_attr *blk_attr)
-{
-        int ret;
-
-        if (!model)
-                return -EINVAL;
-
-        if (!model->faces)
-                return -ENODATA;
-
-        /*
-         * Since drawing one block only is an optional
-         * feature, in order to reduce memory footprint
-         * we make it manually heap allocation instead of
-         * on stack.
-         */
-        if (model->glattr == NULL) {
-                model->glattr = memalloc(sizeof(gl_attr));
-                if (!model->glattr)
-                        return -ENOMEM;
-        }
-
-        if (model->glvbo == NULL) {
-                model->glvbo = memalloc(sizeof(gl_vbo));
-                if (!model->glvbo)
-                        return -ENOMEM;
-        }
-
-        gl_attr *glattr = model->glattr;
-        gl_vbo *glvbo = model->glvbo;
-
-        vertex_attr *vertices = block_model_vertices_pack(model);
-        uint32_t count = VERTICES_TRIANGULATE_CUBE;
-
-        ret = gl_vbo_init(glvbo);
-        if (ret)
-                goto free_alloc;
-
-        gl_vbo_index(glvbo, vertices, count);
-        ret = gl_vbo_buffer_create(glvbo, glattr);
-        if (ret == GL_FALSE)
-                goto free_vbo;
-
-        glattr->program = block_shader_get(blk_attr->shader);
-        ret = glIsProgram(glattr->program);
-        if (ret == GL_FALSE) {
-                pr_err_func("invalid block shader program\n");
-                goto free_bufs;
-        }
-
-        if (blk_attr->texel.textured) {
-                ret = glIsTexture(blk_attr->texel.texel);
-                if (ret == GL_FALSE) {
-                        pr_err_func("invalid texture object\n");
-                        goto free_bufs;
-                }
-
-                glattr->texel = blk_attr->texel.texel;
-        }
-
-        glattr->sampler = glGetUniformLocation(glattr->program, "sampler");
-        glattr->mat_transform = glGetUniformLocation(glattr->program, "mat_transform");
-
-free_vbo:
-        // OpenGL has our copy now, free memory
-        gl_vbo_deinit(glvbo);
-
-free_alloc:
-        memfree((void **)&vertices);
-
-        return ret;
-
-free_bufs:
-        gl_vbo_buffer_delete(glattr);
-
-        goto free_vbo;
-}
-
-int block_model_draw(block_model *model, mat4 mat_transform)
-{
-        gl_attr *glattr;
-
-        if (!model)
-                return -EINVAL;
-
-        glattr = model->glattr;
-
-        glEnable(GL_CULL_FACE);
-
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-        glUseProgram(GL_PROGRAM_NONE);
-
-        glUseProgram(glattr->program);
-
-        glUniformMatrix4fv(glattr->mat_transform, 1, GL_FALSE, &mat_transform[0][0]);
-
-        if (glattr->texel != GL_TEXTURE_NONE) {
-                glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, glattr->texel);
-                glUniform1i(glattr->sampler, 0);
-        }
-
-        glEnableVertexAttribArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, glattr->vertex);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
-
-        glEnableVertexAttribArray(1);
-        glBindBuffer(GL_ARRAY_BUFFER, glattr->vertex_nrm);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
-
-        glEnableVertexAttribArray(2);
-        glBindBuffer(GL_ARRAY_BUFFER, glattr->vertex_uv);
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, (void *)0);
-
-        glDrawArrays(GL_TRIANGLES, 0, glattr->vertex_count);
-
-        glDisableVertexAttribArray(0);
-        glDisableVertexAttribArray(1);
-        glDisableVertexAttribArray(2);
-
-        glUseProgram(GL_PROGRAM_NONE);
-
-        glDisable(GL_CULL_FACE);
-
-        return 0;
-}
-
-int block_model_draw_indexed(block_model *model, mat4 mat_transform)
-{
-        gl_attr *glattr;
-
-        if (!model)
-                return -EINVAL;
-
-        glattr = model->glattr;
-
-        glEnable(GL_CULL_FACE);
-
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-        glUseProgram(GL_PROGRAM_NONE);
-
-        glUseProgram(glattr->program);
-
-        glUniformMatrix4fv(glattr->mat_transform, 1, GL_FALSE, &mat_transform[0][0]);
-
-        if (glattr->texel != GL_TEXTURE_NONE) {
-                glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, glattr->texel);
-                glUniform1i(glattr->sampler, 0);
-        }
-
-        glEnableVertexAttribArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, glattr->vertex);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
-
-        glEnableVertexAttribArray(1);
-        glBindBuffer(GL_ARRAY_BUFFER, glattr->vertex_nrm);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
-
-        glEnableVertexAttribArray(2);
-        glBindBuffer(GL_ARRAY_BUFFER, glattr->vertex_uv);
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, (void *)0);
-
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, glattr->vbo_index);
-        glDrawElements(GL_TRIANGLES, glattr->vertex_count, GL_UNSIGNED_INT, (void *)0);
-
-        glDisableVertexAttribArray(0);
-        glDisableVertexAttribArray(1);
-        glDisableVertexAttribArray(2);
-
-        glUseProgram(GL_PROGRAM_NONE);
-
-        glDisable(GL_CULL_FACE);
+        block_model_face_deinit(model);
 
         return 0;
 }
