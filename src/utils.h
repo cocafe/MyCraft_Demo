@@ -146,6 +146,7 @@ int seqlist_deinit(seqlist *list);
 int seqlist_expand(seqlist *list, size_t count);
 int seqlist_shrink(seqlist *list);
 int seqlist_append(seqlist *list, void *element);
+int seqlist_is_empty(seqlist *list);
 
 /**
  * Linked List Implementation

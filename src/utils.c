@@ -497,6 +497,22 @@ int seqlist_append(seqlist *list, void *element)
 }
 
 /**
+ * seqlist_is_empty() - check list whether empty
+ * @param list: pointer to list
+ * @return 0 on success
+ */
+int seqlist_is_empty(seqlist *list)
+{
+        if (!list)
+                return 1;
+
+        if (list->count_utilized == 0)
+                return 1;
+
+        return 0;
+}
+
+/**
  * Linked List Implementation
  */
 
