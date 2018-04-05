@@ -95,6 +95,8 @@ int gl_vbo_index(gl_vbo *vbo, vertex_attr *vertices, uint32_t vertex_count);
 int gl_vbo_buffer_create(gl_vbo *vbo, gl_attr *glattr);
 void gl_vbo_buffer_delete(gl_attr *glattr);
 
+int gl_vbo_is_empty(gl_vbo *vbo);
+
 /**
  * FPS Meter
  */

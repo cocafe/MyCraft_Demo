@@ -577,6 +577,18 @@ void gl_vbo_buffer_delete(gl_attr *glattr)
         buffer_delete(&glattr->vertex_nrm);
 }
 
+int gl_vbo_is_empty(gl_vbo *vbo)
+{
+        if (!vbo)
+                return 1;
+
+        if (seqlist_is_empty(&vbo->indices) &&
+            seqlist_is_empty(&vbo->vbo_attrs))
+                return 1;
+
+        return 0;
+}
+
 /**
  * FPS Meter
  */
