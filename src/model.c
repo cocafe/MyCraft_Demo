@@ -294,6 +294,8 @@ int block_model_init(block_model *model, vec3 origin_gl)
         if (!model)
                 return -EINVAL;
 
+        memzero(model, sizeof(block_model));
+
         memcpy(model->origin_gl, origin_gl, sizeof(vec3));
 
         return 0;
