@@ -25,6 +25,8 @@ typedef struct block {
 typedef enum chunk_state {
         CHUNK_UNKNOWN = 0,
         CHUNK_INITED,
+        CHUNK_PREPARED,
+        CHUNK_PREPARING,
         CHUNK_UPDATED,
         CHUNK_UPDATING,
         CHUNK_NEED_UPDATE,
@@ -32,15 +34,16 @@ typedef enum chunk_state {
 } chunk_state;
 
 typedef struct chunk {
-        ivec3           origin_l;
+        ivec3                   origin_l;
 
-        // TODO: Need to be thread-safe
-        chunk_state     state;
+        gl_vbo                  glvbo;
+        gl_attr                 glattr;
 
-        gl_attr         glattr;
+        seqlist                 *vertices;
+        linklist                *blocks;
 
-        seqlist         *vertices;
-        linklist        *blocks;
+        chunk_state             state;
+        pthread_rwlock_t        rwlock;
 } chunk;
 
 typedef struct world {
@@ -58,7 +61,7 @@ int block_deinit(block *b);
 
 int block_in_chunk(ivec3 origin_block, int chunk_length, ivec3 origin_chunk);
 
-int block_draw(block *b, mat4 mat_transform, int vbo_enabled);
+int block_draw(block *b, mat4 mat_transform, int use_vbo);
 int block_dump(block *b);
 
 int chunk_init(chunk *c, ivec3 origin_chunk);
@@ -81,12 +84,12 @@ chunk *world_get_chunk(world *w, ivec3 origin_chunk);
 
 int world_add_block(world *w, block *b);
 int world_del_block(world *w, ivec3 origin_block);
-
 int world_draw_block(world *w, mat4 mat_transform);
+
+int world_prepare_chunk(world *w);
+int world_update_chunk(world *w);
 int world_draw_chunk(world *w, mat4 mat_transform);
 
-int world_update_chunk(world *w);
-
-int world_block_dump(world *w);
+int world_dump(world *w);
 
 #endif //MYCRAFT_DEMO_CHUNKS_H
