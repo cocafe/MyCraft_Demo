@@ -172,7 +172,10 @@ int chunk_deinit(chunk *c)
         seqlist_deinit(c->vertices);
         seqlist_free(&c->vertices);
 
+        c->state = CHUNK_DEINITED;
+
         pthread_rwlock_unlock(&c->rwlock);
+
         pthread_rwlock_destroy(&c->rwlock);
 
         memzero(c, sizeof(chunk));
@@ -209,8 +212,8 @@ static inline int chunk_state_get(chunk *c, int flag)
 static inline int chunk_state_ready(chunk *c)
 {
         return (chunk_state_get(c, L_WAIT) == CHUNK_INITED) ||
-               (chunk_state_get(c, L_WAIT) == CHUNK_UPDATED) ||
-               (chunk_state_get(c, L_WAIT) == CHUNK_PREPARED);
+               (chunk_state_get(c, L_WAIT) == CHUNK_FLUSHED) ||
+               (chunk_state_get(c, L_WAIT) == CHUNK_NEED_FLUSH);
 }
 
 static inline linklist_node *chunk_get_block_node(chunk *c, ivec3 origin_b)
@@ -404,75 +407,6 @@ int world_del_block(world *w, ivec3 origin_block)
         return 0;
 }
 
-int chunk_draw(chunk *c, mat4 mat_transform)
-{
-        gl_attr *glattr;
-
-        if (unlikely(!c))
-                return -EINVAL;
-
-        glattr = &c->glattr;
-
-        glUseProgram(GL_PROGRAM_NONE);
-
-        glUseProgram(glattr->program);
-
-        glUniformMatrix4fv(glattr->mat_transform, 1, GL_FALSE, &mat_transform[0][0]);
-
-        if (glattr->texel != GL_TEXTURE_NONE) {
-                glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, glattr->texel);
-                glUniform1i(glattr->sampler, 0);
-        }
-
-        glEnableVertexAttribArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, glattr->vertex);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
-
-        glEnableVertexAttribArray(1);
-        glBindBuffer(GL_ARRAY_BUFFER, glattr->vertex_nrm);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
-
-        glEnableVertexAttribArray(2);
-        glBindBuffer(GL_ARRAY_BUFFER, glattr->vertex_uv);
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, (void *)0);
-
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, glattr->vbo_index);
-        glDrawElements(GL_TRIANGLES, glattr->vertex_count, GL_UNSIGNED_INT, (void *)0);
-
-        glDisableVertexAttribArray(0);
-        glDisableVertexAttribArray(1);
-        glDisableVertexAttribArray(2);
-
-        glUseProgram(GL_PROGRAM_NONE);
-
-        return 0;
-}
-
-/**
- * world_draw_chunk() - draw world by VBO indexed chunks
- *
- * @param w: pointer to world container
- * @param mat_transform: perspective transform matrix
- * @return 0 on success
- */
-int world_draw_chunks(world *w, mat4 mat_transform)
-{
-        linklist_node *pos;
-
-        if (!w)
-                return -EINVAL;
-
-        linklist_for_each_node(pos, w->chunks->head) {
-                chunk *c = pos->data;
-
-                if (chunk_state_get(c, L_NOWAIT) == CHUNK_UPDATED)
-                        chunk_draw(pos->data, mat_transform);
-        }
-
-        return 0;
-}
-
 int chunk_vertices_pack(chunk *c)
 {
         linklist_node *pos;
@@ -513,6 +447,36 @@ int chunk_vertices_free(chunk *c)
         return seqlist_deinit(c->vertices);
 }
 
+int chunk_update(chunk *c)
+{
+        if (!c)
+                return -EINVAL;
+
+        if (pthread_rwlock_trywrlock(&c->rwlock))
+                goto out;
+
+        if (c->state != CHUNK_NEED_UPDATE)
+                goto unlock;
+
+        c->state = CHUNK_UPDATING;
+
+        chunk_vertices_pack(c);
+
+        gl_vbo_init(&c->glvbo);
+        gl_vbo_index(&c->glvbo, c->vertices->data,
+                     (uint32_t)c->vertices->count_utilized);
+
+        chunk_vertices_free(c);
+
+        c->state = CHUNK_NEED_FLUSH;
+
+unlock:
+        pthread_rwlock_unlock(&c->rwlock);
+
+out:
+        return 0;
+}
+
 void chunk_gl_attr_free(chunk *c)
 {
         gl_attr_buffer_delete(&c->glattr);
@@ -547,7 +511,7 @@ int chunk_gl_attr_generate(gl_attr *glattr, block_attr *blk_dummy)
         return 0;
 }
 
-int chunk_gl_vbo_buffer_generate(chunk *c)
+int chunk_gl_attr_buffer_create(chunk *c)
 {
         int ret;
 
@@ -558,87 +522,29 @@ int chunk_gl_vbo_buffer_generate(chunk *c)
         return ret;
 }
 
-int chunk_gl_data_prepare(chunk *c)
-{
-        if (!c)
-                return -EINVAL;
-
-        pthread_rwlock_wrlock(&c->rwlock);
-        c->state = CHUNK_PREPARING;
-
-        chunk_gl_attr_free(c);
-
-        gl_vbo_init(&c->glvbo);
-
-        chunk_vertices_pack(c);
-
-        gl_vbo_index(&c->glvbo, c->vertices->data,
-                     (uint32_t)c->vertices->count_utilized);
-
-        chunk_vertices_free(c);
-
-        c->state = CHUNK_PREPARED;
-        pthread_rwlock_unlock(&c->rwlock);
-
-        return 0;
-}
-
 int chunk_gl_data_generate(chunk *c)
 {
         if (!c)
                 return -EINVAL;
 
-        pthread_rwlock_wrlock(&c->rwlock);
-        c->state = CHUNK_UPDATING;
-        pthread_rwlock_unlock(&c->rwlock);
-
         chunk_gl_attr_generate(&c->glattr, block_attr_get(BLOCK_DUMMY));
-        chunk_gl_vbo_buffer_generate(c);
-
-        return 0;
-}
-
-int chunk_gl_data_free(chunk *c)
-{
-        if (!c)
-                return -EINVAL;
+        chunk_gl_attr_buffer_create(c);
 
         gl_vbo_deinit(&c->glvbo);
 
-        pthread_rwlock_wrlock(&c->rwlock);
-        c->state = CHUNK_UPDATED;
-        pthread_rwlock_unlock(&c->rwlock);
-
         return 0;
 }
 
-void *chunk_prepare_worker(void *data)
+void *chunk_update_worker(void *data)
 {
         chunk *c = data;
 
         pr_info_func("chunk (%d, %d, %d)\n",
                       c->origin_l[X], c->origin_l[Y], c->origin_l[Z]);
 
-        chunk_gl_data_prepare(c);
+        chunk_update(c);
 
         return NULL;
-}
-
-int world_prepare_chunks(world *w)
-{
-        linklist_node *pos;
-
-        if (!w)
-                return -EINVAL;
-
-        linklist_for_each_node(pos, w->chunks->head) {
-                chunk *c = pos->data;
-
-                if (chunk_state_get(c, L_NOWAIT) == CHUNK_NEED_UPDATE)
-                        pthread_create(NULL, NULL, chunk_prepare_worker, c);
-        }
-
-        return 0;
 }
 
 int world_update_chunks(world *w)
@@ -651,12 +557,111 @@ int world_update_chunks(world *w)
         linklist_for_each_node(pos, w->chunks->head) {
                 chunk *c = pos->data;
 
-                if (chunk_state_get(c, L_NOWAIT) == CHUNK_PREPARED) {
-                        pr_info_func("chunk (%d, %d, %d)\n",
-                                      c->origin_l[X], c->origin_l[Y], c->origin_l[Z]);
-                        chunk_gl_data_generate(c);
-                        chunk_gl_data_free(c);
-                }
+                if (chunk_state_get(c, L_NOWAIT) == CHUNK_NEED_UPDATE)
+                        pthread_create(NULL, NULL, chunk_update_worker, c);
+        }
+
+        return 0;
+}
+
+int chunk_flush(chunk *c)
+{
+        if (unlikely(!c))
+                return -EINVAL;
+
+        if (pthread_rwlock_trywrlock(&c->rwlock))
+                goto out;
+
+        if (c->state != CHUNK_NEED_FLUSH)
+                goto unlock;
+
+        c->state = CHUNK_FLUSHING;
+
+        pr_info_func("chunk (%d, %d, %d)\n",
+                     c->origin_l[X], c->origin_l[Y], c->origin_l[Z]);
+
+        chunk_gl_attr_free(c);
+        chunk_gl_data_generate(c);
+
+        c->state = CHUNK_FLUSHED;
+
+unlock:
+        pthread_rwlock_unlock(&c->rwlock);
+
+out:
+        return 0;
+}
+
+int chunk_draw(chunk *c, mat4 mat_transform)
+{
+        gl_attr *glattr;
+
+        if (unlikely(!c))
+                return -EINVAL;
+
+        glattr = &c->glattr;
+
+        // Validate gl buffer is generated or not
+        // GL attr is generated during chunk flushing
+        if (!glattr->vertex_count)
+                goto out;
+
+        glUseProgram(GL_PROGRAM_NONE);
+
+        glUseProgram(glattr->program);
+
+        glUniformMatrix4fv(glattr->mat_transform, 1, GL_FALSE, &mat_transform[0][0]);
+
+        if (glattr->texel != GL_TEXTURE_NONE) {
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, glattr->texel);
+                glUniform1i(glattr->sampler, 0);
+        }
+
+        glEnableVertexAttribArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, glattr->vertex);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
+
+        glEnableVertexAttribArray(1);
+        glBindBuffer(GL_ARRAY_BUFFER, glattr->vertex_nrm);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
+
+        glEnableVertexAttribArray(2);
+        glBindBuffer(GL_ARRAY_BUFFER, glattr->vertex_uv);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, (void *)0);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, glattr->vbo_index);
+        glDrawElements(GL_TRIANGLES, glattr->vertex_count, GL_UNSIGNED_INT, (void *)0);
+
+        glDisableVertexAttribArray(0);
+        glDisableVertexAttribArray(1);
+        glDisableVertexAttribArray(2);
+
+        glUseProgram(GL_PROGRAM_NONE);
+
+out:
+        return 0;
+}
+
+/**
+ * world_draw_chunk() - draw world by VBO indexed chunks
+ *
+ * @param w: pointer to world container
+ * @param mat_transform: perspective transform matrix
+ * @return 0 on success
+ */
+int world_draw_chunks(world *w, mat4 mat_transform)
+{
+        linklist_node *pos;
+
+        if (!w)
+                return -EINVAL;
+
+        linklist_for_each_node(pos, w->chunks->head) {
+                chunk *c = pos->data;
+
+                chunk_flush(c);
+                chunk_draw(c, mat_transform);
         }
 
         return 0;

@@ -25,10 +25,11 @@ typedef struct block {
 typedef enum chunk_state {
         CHUNK_UNKNOWN = 0,      // Undefined
         CHUNK_INITED,           // Ready
-        CHUNK_PREPARED,         // Ready
-        CHUNK_PREPARING,        // Updating vertices (WR locked)
-        CHUNK_UPDATED,          // Ready
-        CHUNK_UPDATING,         // Updating GL data
+        CHUNK_DEINITED,         // In case
+        CHUNK_UPDATING,         // Updating vertices (WR locked)
+        CHUNK_FLUSHED,          // GL data is updated
+        CHUNK_FLUSHING,         // Updating GL data
+        CHUNK_NEED_FLUSH,       // GL data is ready
         CHUNK_NEED_UPDATE,      // Need to update, or world just inited
         NR_CHUNK_STATES,
 } chunk_state;
@@ -43,6 +44,7 @@ typedef struct chunk {
         linklist                *blocks;
 
         chunk_state             state;
+
         pthread_rwlock_t        rwlock;
 } chunk;
 
@@ -77,7 +79,6 @@ int world_del_block(world *w, ivec3 origin_block);
 int chunk_set_blocks(chunk *c, world *w);
 int world_set_blocks(world *w, int init, int trap);
 
-int world_prepare_chunks(world *w);
 int world_update_chunks(world *w);
 int world_draw_chunks(world *w, mat4 mat_transform);
 
