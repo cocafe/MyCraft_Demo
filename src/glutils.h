@@ -14,7 +14,10 @@
 
 typedef enum texel_filter {
         FILTER_NEAREST = 0,
+        FILTER_NEAREST_MIPMAP_NEAREST,
+        FILTER_NEAREST_MIPMAP_LINEAR,
         FILTER_LINEAR,
+        FILTER_LINEAR_MIPMAP_NEAREST,
         FILTER_LINEAR_MIPMAP_LINEAR,
         FILTER_ANISOTROPIC,     // TODO: EXT_texture_filter_anisotropic
         NR_TEXEL_FILTER,
@@ -66,7 +69,7 @@ GLuint program_create(const char *filepath_shader_vert,
                       const char *filepath_shader_frag);
 int program_delete(GLuint *program);
 
-GLuint texture_png_create(image_png *png, int32_t filter_level);
+GLuint texture_png_create(image_png *png, int32_t filter_level, uint32_t mipmaps);
 int texture_delete(GLuint *texture);
 
 int gl_attr_init(gl_attr *attr);

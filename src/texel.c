@@ -53,7 +53,7 @@ int texel_pack_init(void)
 
                 p->slots = p->slice * p->slice;
 
-                p->texel = texture_png_create(&p->png, p->filter);
+                p->texel = texture_png_create(&p->png, p->filter, 0);
                 if (glIsTexture(p->texel) == GL_FALSE) {
                         pr_err_func("failed to create texture [%s]\n", p->filepath);
                         return -EFAULT;

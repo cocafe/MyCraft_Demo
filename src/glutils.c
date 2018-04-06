@@ -273,7 +273,7 @@ int program_delete(GLuint *program)
         return 0;
 }
 
-GLuint texture_png_create(image_png *png, int32_t filter_level)
+GLuint texture_png_create(image_png *png, int32_t filter_level, uint32_t mipmaps)
 {
         GLuint texture;
 
@@ -283,35 +283,55 @@ GLuint texture_png_create(image_png *png, int32_t filter_level)
         glGenTextures(1, &texture);
         glBindTexture(GL_TEXTURE_2D, texture);
 
-        // TODO: glTexStorage2D(), mipmap level
-        glTexImage2D(GL_TEXTURE_2D, 0,
-                     (png->bpp == PNG_BPP_RGB) ? GL_RGB : GL_RGBA,
-                     png->width, png->height, 0,
-                     (png->bpp == PNG_BPP_RGB) ? GL_RGB : GL_RGBA,
-                     GL_UNSIGNED_BYTE, png->data);
+        if (!mipmaps) {
+                glTexImage2D(GL_TEXTURE_2D, 0,
+                             (png->bpp == PNG_BPP_RGB) ? GL_RGB : GL_RGBA,
+                             png->width, png->height, 0,
+                             (png->bpp == PNG_BPP_RGB) ? GL_RGB : GL_RGBA,
+                             GL_UNSIGNED_BYTE, png->data);
+        } else {
+                glTexStorage2D(GL_TEXTURE_2D, mipmaps, GL_RGBA8, png->width,
+                               png->height);
+                glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, png->width, png->height,
+                                (png->bpp == PNG_BPP_RGB) ? GL_RGB : GL_RGBA,
+                                GL_UNSIGNED_BYTE, png->data);
+
+                glGenerateMipmap(GL_TEXTURE_2D);
+        }
+
+//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
         switch (filter_level) {
                 default:
                 case FILTER_NEAREST:
-                        glTexParameteri(GL_TEXTURE_2D,
-                                        GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-                        glTexParameteri(GL_TEXTURE_2D,
-                                        GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+                        break;
 
+                case FILTER_NEAREST_MIPMAP_NEAREST:
+                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+                        break;
+
+                case FILTER_NEAREST_MIPMAP_LINEAR:
+                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
                         break;
 
                 case FILTER_LINEAR:
+                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                        break;
+
+                case FILTER_LINEAR_MIPMAP_NEAREST:
+                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+                        break;
+
                 case FILTER_LINEAR_MIPMAP_LINEAR:
-                        glGenerateMipmap(GL_TEXTURE_2D);
-                        glTexParameteri(GL_TEXTURE_2D,
-                                        GL_TEXTURE_WRAP_S, GL_REPEAT);
-                        glTexParameteri(GL_TEXTURE_2D,
-                                        GL_TEXTURE_WRAP_T, GL_REPEAT);
-                        glTexParameteri(GL_TEXTURE_2D,
-                                        GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-                        glTexParameteri(GL_TEXTURE_2D,
-                                        GL_TEXTURE_MIN_FILTER,
-                                        GL_LINEAR_MIPMAP_LINEAR);
+                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 
                         break;
         }
