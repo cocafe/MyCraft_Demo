@@ -504,6 +504,108 @@ out:
         return 0;
 }
 
+static inline void block_near_origin_get(block *b, int f, ivec3 origin_near)
+{
+        if (!b)
+                return;
+
+        // XXX: if BLOCK_EDGE_LEN_GLUNIT != 1, this will be incorrect
+        origin_near[X] += b->origin_l[X] + block_normals[f][X];
+        origin_near[Y] += b->origin_l[Y] + block_normals[f][Y];
+        origin_near[Z] += b->origin_l[Z] + block_normals[f][Z];
+}
+
+int chunk_cull_blocks(chunk *c, world *w)
+{
+        linklist_node *pos;
+
+        if (!c)
+                return -EINVAL;
+
+        pthread_rwlock_rdlock(&c->rwlock);
+
+        linklist_for_each_node(pos, c->blocks->head) {
+                block *b = pos->data;
+
+                for (int i = 0; i < CUBE_QUAD_FACES; ++i) {
+                        block_face *f = &(b->model.faces[i]);
+                        ivec3 o_near = { 0 };
+                        block *b_near;
+
+                        block_near_origin_get(b, i, o_near);
+                        b_near = world_get_block(w, o_near);
+
+                        if (!b_near)
+                                f->visible = 1;
+                        else
+                                f->visible = 0;
+                }
+        }
+
+        pthread_rwlock_unlock(&c->rwlock);
+
+        return 0;
+}
+
+void *chunk_update_worker(void *data)
+{
+        typedef struct {
+                world *w;
+                chunk *c;
+        } thread_arg;
+
+        world *w = ((thread_arg *)data)->w;
+        chunk *c = ((thread_arg *)data)->c;
+
+        // Thread arg is on heap, free it
+        memfree(&data);
+
+        pr_info_func("chunk (%d, %d, %d)\n",
+                      c->origin_l[X], c->origin_l[Y], c->origin_l[Z]);
+
+        chunk_cull_blocks(c, w);
+        chunk_update(c);
+
+        return NULL;
+}
+
+int world_update_chunks(world *w)
+{
+        typedef struct {
+                world *w;
+                chunk *c;
+        } thread_arg;
+
+        linklist_node *pos;
+
+        if (!w)
+                return -EINVAL;
+
+        linklist_for_each_node(pos, w->chunks->head) {
+                chunk *c = pos->data;
+
+                if (pthread_rwlock_trywrlock(&c->rwlock))
+                        continue;
+
+                if (c->state != CHUNK_NEED_UPDATE) {
+                        pthread_rwlock_unlock(&c->rwlock);
+                        continue;
+                }
+
+                c->state = CHUNK_SCHED_UPDATE;
+                pthread_rwlock_unlock(&c->rwlock);
+
+                thread_arg *arg = memalloc(sizeof(thread_arg));
+
+                arg->w = w;
+                arg->c = c;
+
+                pthread_create(NULL, NULL, chunk_update_worker, arg);
+        }
+
+        return 0;
+}
+
 void chunk_gl_attr_free(chunk *c)
 {
         gl_attr_buffer_delete(&c->glattr);
@@ -558,45 +660,6 @@ int chunk_gl_data_generate(chunk *c)
         chunk_gl_attr_buffer_create(c);
 
         gl_vbo_deinit(&c->glvbo);
-
-        return 0;
-}
-
-void *chunk_update_worker(void *data)
-{
-        chunk *c = data;
-
-        pr_info_func("chunk (%d, %d, %d)\n",
-                      c->origin_l[X], c->origin_l[Y], c->origin_l[Z]);
-
-        chunk_update(c);
-
-        return NULL;
-}
-
-int world_update_chunks(world *w)
-{
-        linklist_node *pos;
-
-        if (!w)
-                return -EINVAL;
-
-        linklist_for_each_node(pos, w->chunks->head) {
-                chunk *c = pos->data;
-
-                if (pthread_rwlock_trywrlock(&c->rwlock))
-                        continue;
-
-                if (c->state != CHUNK_NEED_UPDATE) {
-                        pthread_rwlock_unlock(&c->rwlock);
-                        continue;
-                }
-
-                c->state = CHUNK_SCHED_UPDATE;
-                pthread_rwlock_unlock(&c->rwlock);
-
-                pthread_create(NULL, NULL, chunk_update_worker, c);
-        }
 
         return 0;
 }
@@ -707,74 +770,6 @@ int world_draw_chunks(world *w, mat4 mat_transform)
 
                 chunk_flush(c);
                 chunk_draw(c, mat_transform);
-        }
-
-        return 0;
-}
-
-static inline void block_near_origin_get(block *b, int f, ivec3 origin_near)
-{
-        if (!b)
-                return;
-
-        // XXX: if BLOCK_EDGE_LEN_GLUNIT != 1, this will be incorrect
-        origin_near[X] += b->origin_l[X] + block_normals[f][X];
-        origin_near[Y] += b->origin_l[Y] + block_normals[f][Y];
-        origin_near[Z] += b->origin_l[Z] + block_normals[f][Z];
-}
-
-int chunk_set_blocks(chunk *c, world *w)
-{
-        linklist_node *pos;
-
-        if (!c)
-                return -EINVAL;
-
-        pthread_rwlock_rdlock(&c->rwlock);
-
-        linklist_for_each_node(pos, c->blocks->head) {
-                block *b = pos->data;
-
-                for (int i = 0; i < CUBE_QUAD_FACES; ++i) {
-                        block_face *f = &(b->model.faces[i]);
-                        ivec3 o_near = { 0 };
-                        block *b_near;
-
-                        block_near_origin_get(b, i, o_near);
-                        b_near = world_get_block(w, o_near);
-
-                        if (!b_near)
-                                f->visible = 1;
-                        else
-                                f->visible = 0;
-                }
-        }
-
-        pthread_rwlock_unlock(&c->rwlock);
-
-        return 0;
-}
-
-int world_set_blocks(world *w, int init, int trap)
-{
-        linklist_node *pos;
-
-        if (!w)
-                return -EINVAL;
-
-        linklist_for_each_node(pos, w->chunks->head) {
-                chunk *c = pos->data;
-
-                if (!init) {
-                        while (1) {
-                                if (chunk_state_ready(c, 1))
-                                        break;
-                                else if (!trap)
-                                        break;
-                        }
-                }
-
-                chunk_set_blocks(c, w);
         }
 
         return 0;

@@ -78,8 +78,7 @@ chunk *world_get_chunk(world *w, ivec3 origin_chunk);
 int world_add_block(world *w, block *b);
 int world_del_block(world *w, ivec3 origin_block);
 
-int chunk_set_blocks(chunk *c, world *w);
-int world_set_blocks(world *w, int init, int trap);
+int chunk_cull_blocks(chunk *c, world *w);
 
 int world_update_chunks(world *w);
 int world_draw_chunks(world *w, mat4 mat_transform);
