@@ -39,6 +39,7 @@ typedef struct chunk {
 
         gl_vbo                  glvbo;
         gl_attr                 glattr;
+        pthread_rwlock_t        rwlock_gl;
 
         seqlist                 *vertices;
         linklist                *blocks;

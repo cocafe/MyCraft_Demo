@@ -143,6 +143,7 @@ int chunk_init(chunk *c, ivec3 origin_chunk)
         c->state = CHUNK_INITED;
 
         pthread_rwlock_init(&c->rwlock, NULL);
+        pthread_rwlock_init(&c->rwlock_gl, NULL);
 
         return 0;
 }
@@ -155,6 +156,7 @@ int chunk_deinit(chunk *c)
                 return -EINVAL;
 
         pthread_rwlock_wrlock(&c->rwlock);
+        pthread_rwlock_wrlock(&c->rwlock_gl);
 
         linklist_for_each_node(pos, c->blocks->head) {
                 block_deinit(pos->data);
@@ -174,9 +176,11 @@ int chunk_deinit(chunk *c)
 
         c->state = CHUNK_DEINITED;
 
+        pthread_rwlock_unlock(&c->rwlock_gl);
         pthread_rwlock_unlock(&c->rwlock);
 
         pthread_rwlock_destroy(&c->rwlock);
+        pthread_rwlock_destroy(&c->rwlock_gl);
 
         memzero(c, sizeof(chunk));
 
@@ -580,6 +584,8 @@ int chunk_flush(chunk *c)
         pr_info_func("chunk (%d, %d, %d)\n",
                      c->origin_l[X], c->origin_l[Y], c->origin_l[Z]);
 
+        // Since we gonna call draw call in the same thread
+        // There is no point to grab rwlock_gl
         chunk_gl_attr_free(c);
         chunk_gl_data_generate(c);
 
@@ -599,12 +605,15 @@ int chunk_draw(chunk *c, mat4 mat_transform)
         if (unlikely(!c))
                 return -EINVAL;
 
+        if (pthread_rwlock_tryrdlock(&c->rwlock_gl))
+                goto out;
+
         glattr = &c->glattr;
 
         // Validate gl buffer is generated or not
         // GL attr is generated during chunk flushing
         if (!glattr->vertex_count)
-                goto out;
+                goto unlock;
 
         glUseProgram(GL_PROGRAM_NONE);
 
@@ -638,6 +647,9 @@ int chunk_draw(chunk *c, mat4 mat_transform)
         glDisableVertexAttribArray(2);
 
         glUseProgram(GL_PROGRAM_NONE);
+
+unlock:
+        pthread_rwlock_unlock(&c->rwlock_gl);
 
 out:
         return 0;
