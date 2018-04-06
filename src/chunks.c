@@ -215,9 +215,29 @@ static inline int chunk_state_get(chunk *c, int flag)
 
 static inline int chunk_state_ready(chunk *c)
 {
-        return (chunk_state_get(c, L_WAIT) == CHUNK_INITED) ||
-               (chunk_state_get(c, L_WAIT) == CHUNK_FLUSHED) ||
-               (chunk_state_get(c, L_WAIT) == CHUNK_NEED_FLUSH);
+        chunk_state ready[] = {
+                CHUNK_INITED,
+                CHUNK_FLUSHED,
+                CHUNK_NEED_FLUSH,
+        };
+
+        int ret = 0;
+
+        if (!c)
+                return ret;
+
+        pthread_rwlock_rdlock(&c->rwlock);
+
+        for (uint32_t i = 0; i < ARRAY_SIZE(ready); ++i) {
+                if (c->state == ready[i]) {
+                        ret = 1;
+                        break;
+                }
+        }
+
+        pthread_rwlock_unlock(&c->rwlock);
+
+        return ret;
 }
 
 static inline linklist_node *chunk_get_block_node(chunk *c, ivec3 origin_b)
