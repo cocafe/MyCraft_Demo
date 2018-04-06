@@ -459,7 +459,8 @@ int chunk_update(chunk *c)
         if (pthread_rwlock_trywrlock(&c->rwlock))
                 goto out;
 
-        if (c->state != CHUNK_NEED_UPDATE)
+        if (c->state != CHUNK_NEED_UPDATE &&
+            c->state != CHUNK_SCHED_UPDATE)
                 goto unlock;
 
         c->state = CHUNK_UPDATING;
@@ -561,8 +562,18 @@ int world_update_chunks(world *w)
         linklist_for_each_node(pos, w->chunks->head) {
                 chunk *c = pos->data;
 
-                if (chunk_state_get(c, L_NOWAIT) == CHUNK_NEED_UPDATE)
-                        pthread_create(NULL, NULL, chunk_update_worker, c);
+                if (pthread_rwlock_trywrlock(&c->rwlock))
+                        continue;
+
+                if (c->state != CHUNK_NEED_UPDATE) {
+                        pthread_rwlock_unlock(&c->rwlock);
+                        continue;
+                }
+
+                c->state = CHUNK_SCHED_UPDATE;
+                pthread_rwlock_unlock(&c->rwlock);
+
+                pthread_create(NULL, NULL, chunk_update_worker, c);
         }
 
         return 0;

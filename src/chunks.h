@@ -31,6 +31,7 @@ typedef enum chunk_state {
         CHUNK_FLUSHING,         // Updating GL data
         CHUNK_NEED_FLUSH,       // GL data is ready
         CHUNK_NEED_UPDATE,      // Need to update, or world just inited
+        CHUNK_SCHED_UPDATE,     // Sched to update
         NR_CHUNK_STATES,
 } chunk_state;
 
