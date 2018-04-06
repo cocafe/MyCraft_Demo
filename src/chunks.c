@@ -478,8 +478,7 @@ int chunk_update(chunk *c)
         if (!c)
                 return -EINVAL;
 
-        if (pthread_rwlock_trywrlock(&c->rwlock))
-                goto out;
+        pthread_rwlock_wrlock(&c->rwlock);
 
         if (c->state != CHUNK_NEED_UPDATE &&
             c->state != CHUNK_SCHED_UPDATE)
@@ -500,7 +499,6 @@ int chunk_update(chunk *c)
 unlock:
         pthread_rwlock_unlock(&c->rwlock);
 
-out:
         return 0;
 }
 
