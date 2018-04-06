@@ -213,7 +213,7 @@ static inline int chunk_state_get(chunk *c, int flag)
         return state;
 }
 
-static inline int chunk_state_ready(chunk *c)
+static inline int chunk_state_ready(chunk *c, int lock)
 {
         chunk_state ready[] = {
                 CHUNK_INITED,
@@ -226,7 +226,8 @@ static inline int chunk_state_ready(chunk *c)
         if (!c)
                 return ret;
 
-        pthread_rwlock_rdlock(&c->rwlock);
+        if (lock)
+             pthread_rwlock_rdlock(&c->rwlock);
 
         for (uint32_t i = 0; i < ARRAY_SIZE(ready); ++i) {
                 if (c->state == ready[i]) {
@@ -235,7 +236,8 @@ static inline int chunk_state_ready(chunk *c)
                 }
         }
 
-        pthread_rwlock_unlock(&c->rwlock);
+        if (lock)
+                pthread_rwlock_unlock(&c->rwlock);
 
         return ret;
 }
@@ -765,7 +767,7 @@ int world_set_blocks(world *w, int init, int trap)
 
                 if (!init) {
                         while (1) {
-                                if (chunk_state_ready(c))
+                                if (chunk_state_ready(c, 1))
                                         break;
                                 else if (!trap)
                                         break;
@@ -806,7 +808,7 @@ int world_deinit(world *w)
                 chunk *c = pos->data;
 
                 while (1) {
-                        if (chunk_state_ready(c))
+                        if (chunk_state_ready(c, 1))
                                 break;
                 }
 
