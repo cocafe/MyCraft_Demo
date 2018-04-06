@@ -137,9 +137,6 @@ int chunk_init(chunk *c, ivec3 origin_chunk)
         linklist_alloc(&c->blocks);
         linklist_init(c->blocks, sizeof(block));
 
-        seqlist_alloc(&c->vertices);
-        seqlist_init(c->vertices, sizeof(vertex_attr), 128);
-
         c->state = CHUNK_INITED;
 
         pthread_rwlock_init(&c->rwlock, NULL);
@@ -433,6 +430,18 @@ int world_del_block(world *w, ivec3 origin_block)
         return 0;
 }
 
+static inline void chunk_vertices_alloc(chunk *c)
+{
+        seqlist_alloc(&c->vertices);
+        seqlist_init(c->vertices, sizeof(vertex_attr), 128);
+}
+
+static inline void chunk_vertices_free(chunk *c)
+{
+        seqlist_deinit(c->vertices);
+        seqlist_free(&c->vertices);
+}
+
 int chunk_vertices_pack(chunk *c)
 {
         linklist_node *pos;
@@ -465,14 +474,6 @@ int chunk_vertices_pack(chunk *c)
         return 0;
 }
 
-int chunk_vertices_free(chunk *c)
-{
-        if (!c)
-                return -EINVAL;
-
-        return seqlist_deinit(c->vertices);
-}
-
 int chunk_update(chunk *c)
 {
         if (!c)
@@ -486,6 +487,7 @@ int chunk_update(chunk *c)
 
         c->state = CHUNK_UPDATING;
 
+        chunk_vertices_alloc(c);
         chunk_vertices_pack(c);
 
         gl_vbo_init(&c->glvbo);
