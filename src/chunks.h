@@ -59,6 +59,7 @@ typedef struct world {
 } world;
 
 void point_local_to_gl(const ivec3 local, int edge_len, vec3 gl);
+void point_gl_to_local(const vec3 gl, int edge_len, vec3 local);
 
 int block_init(block *b, block_attr *blk_attr, ivec3 origin_block);
 int block_deinit(block *b);

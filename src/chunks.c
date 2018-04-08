@@ -61,6 +61,18 @@ void point_local_to_gl(const ivec3 local, int edge_len, vec3 gl)
         gl[Z] = __local_to_gl(local[Z], edge_len);
 }
 
+static inline float __gl_to_local(float y, int l)
+{
+        return y / (float)l - (1.0f / 2.0f);
+}
+
+void point_gl_to_local(const vec3 gl, int edge_len, vec3 local)
+{
+        local[X] = __gl_to_local(gl[X], edge_len);
+        local[Y] = __gl_to_local(gl[Y], edge_len);
+        local[Z] = __gl_to_local(gl[Z], edge_len);
+}
+
 static inline int __block_in_chunk(int x, int stride)
 {
         return (x / stride);
