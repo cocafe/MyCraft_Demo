@@ -52,7 +52,9 @@ set(SOURCE_FILES
         src/texel.c
         src/texel.h
         src/chunks.c
-        src/chunks.h)
+        src/chunks.h
+        src/thread.c
+        src/thread.h)
 
 set(LIB_SOURCE_FILES
         lib/lodepng.c
