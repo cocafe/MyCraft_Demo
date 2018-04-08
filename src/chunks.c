@@ -12,6 +12,7 @@
 #include "utils.h"
 #include "block.h"
 #include "model.h"
+#include "thread.h"
 #include "glutils.h"
 #include "chunks.h"
 
@@ -600,7 +601,7 @@ int world_update_chunks(world *w)
                 arg->w = w;
                 arg->c = c;
 
-                pthread_create(NULL, NULL, chunk_update_worker, arg);
+                pthread_create_detached(chunk_update_worker, arg);
         }
 
         return 0;
