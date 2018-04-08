@@ -40,21 +40,16 @@ void camera_deltatime_compute(camera *cam)
         cam->time_last = cam->time_curr;
 }
 
-static inline int cursor_is_changed(double a, double b)
-{
-        return fabs(a - b) < 0.000001 ? 0 : 1;
-}
-
 void camera_vectors_compute(GLFWwindow *window, camera *cam, double speed)
 {
         double x, y;
         double set_x, set_y;
 
         // TODO: GLFW Callback
-        glfwGetWindowSize(window, &cam->window_width, &cam->window_height);
+        glfwGetWindowSize(window, &cam->view_width, &cam->view_height);
 
-        set_x = (double)cam->window_width / 2;
-        set_y = (double)cam->window_height / 2;
+        set_x = (double)cam->view_width / 2;
+        set_y = (double)cam->view_height / 2;
 
         // Delta of cursor movement related to screen center
         glfwGetCursorPos(window, &x, &y);
@@ -139,7 +134,7 @@ void camera_perspective_compute(camera *cam, int32_t dynamic_fov)
         vec3 look_at = { 0, 0, 0 };
 
         glm_perspective(dynamic_fov ? cam->fov + cam->fov_delta : cam->fov,
-                        (float)cam->window_width / (float)cam->window_height,
+                        (float)cam->view_width / (float)cam->view_height,
                         cam->clamp_near, cam->clamp_far, cam->mat_persp);
 
         glm_vec_add(cam->position, cam->vector_front, look_at);
