@@ -28,13 +28,11 @@ static ivec3 block_normals[] = {
 
 static inline float __local_to_gl(int x, int l)
 {
-        int coef = (x < 0) ? (-1) : (1);
-
-        return (coef * l * (abs(x) + (1.0f / 2.0f)));
+        return l * (x + 1.0f / 2.0f);
 }
 
 /**
- * coordinate_local_to_gl() - convert block/chunk local space to gl space
+ * point_local_to_gl() - convert block/chunk local space to gl space
  *
  *                |
  *                |
@@ -52,11 +50,11 @@ static inline float __local_to_gl(int x, int l)
  *                v
  *                +z
  *
- * @param local: local coordinate
+ * @param local: local point
  * @param edge_len: cube edge length
- * @param gl: output gl coordinate
+ * @param gl: output gl point
  */
-void coordinate_local_to_gl(const ivec3 local, int edge_len, vec3 gl)
+void point_local_to_gl(const ivec3 local, int edge_len, vec3 gl)
 {
         gl[X] = __local_to_gl(local[X], edge_len);
         gl[Y] = __local_to_gl(local[Y], edge_len);
@@ -107,7 +105,7 @@ int block_init(block *b, block_attr *blk_attr, ivec3 origin_block)
         b->blk_attr = blk_attr;
 
         memcpy(b->origin_l, origin_block, sizeof(ivec3));
-        coordinate_local_to_gl(b->origin_l, BLOCK_EDGE_LEN_GLUNIT, origin_gl);
+        point_local_to_gl(b->origin_l, BLOCK_EDGE_LEN_GLUNIT, origin_gl);
 
         /* TODO: axis */
 

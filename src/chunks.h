@@ -58,7 +58,7 @@ typedef struct world {
         linklist        *chunks;
 } world;
 
-void coordinate_local_to_gl(const ivec3 local, int edge_len, vec3 gl);
+void point_local_to_gl(const ivec3 local, int edge_len, vec3 gl);
 
 int block_init(block *b, block_attr *blk_attr, ivec3 origin_block);
 int block_deinit(block *b);
