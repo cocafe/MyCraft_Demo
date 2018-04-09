@@ -8,6 +8,7 @@
 #include "block.h"
 
 #define VERTICES_TRIANGULATE_CUBE (CUBE_QUAD_FACES * VERTICES_TRIANGULATE_QUAD)
+#define VERTICES_CUBE             (8)
 
 typedef struct block_face {
         vertex_attr     *vertices;
