@@ -67,6 +67,12 @@ enum vertex_idx {
         V4,
         V5,
         V6,
+        V7,
+        V8,
+        V9,
+        V10,
+        V11,
+        V12,
 };
 
 typedef float vec2[2];
