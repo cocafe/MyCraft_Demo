@@ -132,6 +132,15 @@ int buf_free(char **buf);
 long get_cpu_count(void);
 void image_vertical_flip(uint8_t *data, uint32_t width, uint32_t height);
 
+typedef struct timestamp {
+        double  last;
+        double  curr;
+        float   delta;
+} timestamp;
+
+int timestamp_init(timestamp *t);
+int timestamp_update(timestamp *t);
+
 /**
  * Sequence List Implementation
  */

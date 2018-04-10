@@ -351,6 +351,35 @@ void image_vertical_flip(uint8_t *data, uint32_t width, uint32_t height)
 }
 
 /**
+ * Time Stamp
+ */
+
+int timestamp_init(timestamp *t)
+{
+        if (!t)
+                return -EINVAL;
+
+        memzero(t, sizeof(timestamp));
+
+        t->curr = glfwGetTime();
+        t->last = t->curr;
+
+        return 0;
+}
+
+int timestamp_update(timestamp *t)
+{
+        if (!t)
+                return -EINVAL;
+
+        t->curr = glfwGetTime();
+        t->delta = (float)(t->curr - t->last);
+        t->last = t->curr;
+
+        return 0;
+}
+
+/**
  * Sequence List Implementation
  */
 
