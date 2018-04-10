@@ -15,6 +15,7 @@
 #include "utils.h"
 #include "glutils.h"
 #include "chunks.h"
+#include "world.h"
 #include "player.h"
 
 #define ANGEL_VERTICAL_MIN                      (M_PI / (-2))
@@ -25,26 +26,40 @@
 
 #define VERTICES_COLLISION_TEST                 (12)
 
+#define WORLD_GRAVITY                           (20.0f)
+
+#define JUMP_HEIGHT                             (1.2 * BLOCK_EDGE_LEN_GLUNIT)
+
+#define PLAYER_KEY(a, k) \
+        {                       \
+                .act = (a),     \
+                .key = (k),     \
+        }
+
+#define PLAYER_KEY_JUMP                         (GLFW_KEY_SPACE)
+#define PLAYER_KEY_SNEAK                        (GLFW_KEY_LEFT_CONTROL)
+
 static player default_player = {
-        .origin_gl = { 0.0f, 1.95f / 2.0f , 5.0f },
+        .origin_gl = { 0.0f, PLAYER_HEIGHT / 2.0f , 5.0f },
 
         .size = {
-                .height = 1.95f * BLOCK_EDGE_LEN_GLUNIT,
-                .length = 0.5f * BLOCK_EDGE_LEN_GLUNIT,
-                .width  = 0.5f * BLOCK_EDGE_LEN_GLUNIT,
+                .height = PLAYER_HEIGHT,
+                .length = PLAYER_LENGTH,
+                .width  = PLAYER_WIDTH,
         },
 
-        .state = STANDING,
+        .state = INAIR,
+
         .speed = {
-                .fly = 10.0,
-                .fly_sprint = 15.0,
+                .fly = 15.0,
+                .fly_sprint = 20.0,
 
-                .walk = 3.0,
-                .sprint = 6.0,
+                .walk = 5.0,
+                .sprint = 10.0,
                 .sneak = 1.0,
+                .move_air = 2.0,
 
-                .jump = 20.0,
-                .jump_air = 2.0,
+                .jump = 7.07,
 
                 .view = 0.001,
         },
@@ -62,14 +77,9 @@ static player default_player = {
         .cam_offset = { 0.0f, +0.66f, 0.0f },
 };
 
-void camera_deltatime_compute(camera *cam)
-{
-        cam->time_curr = glfwGetTime();
-        cam->time_delta = (float)(cam->time_curr - cam->time_last);
-        cam->time_last = cam->time_curr;
-}
+static timestamp player_ts;
 
-void camera_vectors_compute(GLFWwindow *window, camera *cam, double speed)
+void camera_vectors_compute(camera *cam, GLFWwindow *window, double speed)
 {
         double x, y;
         double set_x, set_y;
@@ -120,7 +130,6 @@ void camera_position_update(camera *cam, player *p)
         glm_vec_add(p->origin_gl, p->cam_offset, cam->position);
 }
 
-// TODO: dynmaic fov during sprint, flying
 void camera_perspective_compute(camera *cam, int32_t dynamic_fov)
 {
         vec3 look_at = { 0, 0, 0 };
@@ -266,6 +275,14 @@ void player_collision_test_vertices(vec3 *vertices, const vec3 origin,
         vertices[V12][Z] = origin[Z] + delta_z;
 }
 
+/**
+ * player_collision_test() - perform player box collision test
+ *
+ * @param p: pointer to player
+ * @param w: pointer to world to test blocks
+ * @param origin_t: origin of test box
+ * @return: 1 on collision detected
+ */
 int player_collision_test(player *p, world *w, vec3 origin_t)
 {
         vec3 test_vertices[VERTICES_COLLISION_TEST];
@@ -280,85 +297,166 @@ int player_collision_test(player *p, world *w, vec3 origin_t)
         return 0;
 }
 
-void player_move_on_ground(player *p, world *w, GLFWwindow *window)
+/**
+ * __player_move() - move player with collision test
+ *
+ * @param p: pointer to player
+ * @param w: pointer to world to perform collision test with blocks
+ * @param dir: moving direction vector
+ * @param y: also move along Y axis
+ * @param ret: (X, Y, Z) axis collision test result
+ */
+void __player_move(player *p, world *w, const vec3 dir, int y, ivec3 ret)
 {
-        camera *cam = &p->cam;
-        float speed = p->speed.walk;
-        vec3 abs_up = { 0.0f, 1.0f, 0.0f };
-        vec3 abs_front = { 0.0f };
-        vec3 origin_t = { 0.0f };
-        vec3 t = { 0.0f };
+        // Temp origin to perform collision test
+        vec3 o = { 0.0f };
 
-        // TODO: State change
-        if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
-                speed = p->speed.sprint;
-        } else if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) ==  GLFW_PRESS) {
-                speed = p->speed.sneak;
+        // X
+
+        glm_vec_copy(p->origin_gl, o);
+
+        o[X] += dir[X];
+        ret[X] = player_collision_test(p, w, o);
+
+        if (!ret[X])
+                p->origin_gl[X] = o[X];
+
+        // Y
+        if (y) {
+                glm_vec_copy(p->origin_gl, o);
+
+                o[Y] += dir[Y];
+                ret[Y] = player_collision_test(p, w, o);
+
+                if (!ret[Y])
+                        p->origin_gl[Y] = o[Y];
+        }
+
+        // Z
+        glm_vec_copy(p->origin_gl, o);
+
+        o[Z] += dir[Z];
+        ret[Z] = player_collision_test(p, w, o);
+
+        if (!ret[Z])
+                p->origin_gl[Z] = o[Z];
+}
+
+void player_move(player *p, world *w, GLFWwindow *window)
+{
+        player_speed *pspeed = &p->speed;
+        timestamp *ts = &player_ts;
+        camera *cam = &p->cam;
+
+        vec3 world_up = { 0.0f, 1.0f, 0.0f };
+        vec3 horizontal_front = { 0.0f };
+        ivec3 collision = { 0 };
+        vec3 move = { 0.0f };
+
+        float speed = p->speed.walk;
+
+        // TODO: Horizontal accelerated speed
+
+        if (p->state == INAIR) {
+                speed = pspeed->move_air;
+        } else if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
+                speed = pspeed->sprint;
+        } else if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
+                speed = pspeed->sneak;
         }
 
         // Vectors for forward/backward
-        glm_cross(cam->vector_right, abs_up, abs_front);
-        glm_vec_scale(abs_front, cam->time_delta, t);
-        glm_vec_scale(t, speed, t);
-        glm_vec_inv(t);
+        glm_cross(cam->vector_right, world_up, horizontal_front);
+        glm_vec_scale(horizontal_front, ts->delta, move);
+        glm_vec_scale(move, speed, move);
+        glm_vec_inv(move);
 
         // TODO: Move range check
         // TODO: Clamp
 
         // Forward
         if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-                glm_vec_copy(p->origin_gl, origin_t);
-                origin_t[X] += t[X];
-                if (!player_collision_test(p, w, origin_t))
-                        p->origin_gl[X] = origin_t[X];
-
-                glm_vec_copy(p->origin_gl, origin_t);
-                origin_t[Z] += t[Z];
-                if (!player_collision_test(p, w, origin_t))
-                        p->origin_gl[Z] = origin_t[Z];
+                __player_move(p, w, move, 0, collision);
         }
 
         // Backward
         if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-                glm_vec_copy(p->origin_gl, origin_t);
-                origin_t[X] -= t[X];
-                if (!player_collision_test(p, w, origin_t))
-                        p->origin_gl[X] = origin_t[X];
-
-                glm_vec_copy(p->origin_gl, origin_t);
-                origin_t[Z] -= t[Z];
-                if (!player_collision_test(p, w, origin_t))
-                        p->origin_gl[Z] = origin_t[Z];
+                glm_vec_inv(move);
+                __player_move(p, w, move, 0, collision);
         }
 
         // Vector for left/right
-        glm_vec_scale(cam->vector_right, cam->time_delta, t);
-        glm_vec_scale(t, speed, t);
+        glm_vec_scale(cam->vector_right, ts->delta, move);
+        glm_vec_scale(move, speed, move);
 
         // Left
         if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-                glm_vec_copy(p->origin_gl, origin_t);
-                origin_t[X] -= t[X];
-                if (!player_collision_test(p, w, origin_t))
-                        p->origin_gl[X] = origin_t[X];
-
-                glm_vec_copy(p->origin_gl, origin_t);
-                origin_t[Z] -= t[Z];
-                if (!player_collision_test(p, w, origin_t))
-                        p->origin_gl[Z] = origin_t[Z];
+                glm_vec_inv(move);
+                __player_move(p, w, move, 0, collision);
         }
 
         // Right
         if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-                glm_vec_copy(p->origin_gl, origin_t);
-                origin_t[X] += t[X];
-                if (!player_collision_test(p, w, origin_t))
-                        p->origin_gl[X] = origin_t[X];
+                __player_move(p, w, move, 0, collision);
+        }
 
-                glm_vec_copy(p->origin_gl, origin_t);
-                origin_t[Z] += t[Z];
-                if (!player_collision_test(p, w, origin_t))
-                        p->origin_gl[Z] = origin_t[Z];
+        if (player_collision_test(p, w, p->origin_gl)) {
+                p->state = INAIR;
+        }
+}
+
+void player_is_on_ground(player *p, world *w)
+{
+        float dist_t = 0.01;
+        vec3 origin_t = { 0 };
+
+        glm_vec_copy(p->origin_gl, origin_t);
+
+        origin_t[Y] -= dist_t;
+
+        // Test whether we are on ground
+        if (player_collision_test(p, w, origin_t)) {
+                // Collision detected
+                p->state = ONGROUND;
+                p->speed.vertical = 0;
+        } else {
+                p->state = INAIR;
+        }
+}
+
+void player_gravity_fall(player *p, world *w)
+{
+        player_speed *pspeed = &p->speed;
+        timestamp *ts = &player_ts;
+        vec3 world_up = { 0.0f, 1.0f, 0.0f };
+        ivec3 collision = { 0 };
+        vec3 vec_t = { 0 };
+
+        if (p->state == INAIR) {
+                pspeed->vertical -= WORLD_GRAVITY * ts->delta;
+
+                glm_vec_scale(world_up, ts->delta, vec_t);
+                glm_vec_scale(vec_t, pspeed->vertical, vec_t);
+
+                __player_move(p, w, vec_t, 1, collision);
+
+                // Hit ground during falling
+                if (collision[Y]) {
+                        p->state = ONGROUND;
+                        p->speed.vertical = 0;
+                }
+        }
+}
+
+void player_jump(player *p, GLFWwindow *window)
+{
+        player_speed *pspeed = &p->speed;
+
+        if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+                if (p->state == ONGROUND) {
+                        pspeed->vertical = pspeed->jump;
+                        p->state = INAIR;
+                }
         }
 }
 
@@ -368,15 +466,13 @@ void player_movement_handle(player *p, world *w, GLFWwindow *window)
 
         switch (state) {
                 case FLYING:
-                case FALLING:
                         break;
 
+                case ONGROUND:
+                case INAIR:
                 default:
-                case STANDING:
-                case WALKING:
-                case RUNNING:
-                case SNEAKING:
-                        player_move_on_ground(p, w, window);
+                        player_jump(p, window);
+                        player_move(p, w, window);
                         break;
         }
 }
@@ -386,15 +482,27 @@ void player_inputs_handle(player *p, world *w, GLFWwindow *window)
         camera *cam = &p->cam;
         player_speed *speed = &p->speed;
 
-        camera_deltatime_compute(cam);
+        timestamp_update(&player_ts);
 
-        camera_vectors_compute(window, cam, speed->view);
-
+        player_is_on_ground(p, w);
         player_movement_handle(p, w, window);
+        player_gravity_fall(p, w);
 
         camera_position_update(cam, p);
-
+        camera_vectors_compute(cam, window, speed->view);
         camera_perspective_compute(cam, 0);
+}
+
+int player_position_set(player *p, vec3 pos)
+{
+        if (!p)
+                return -EINVAL;
+
+        glm_vec_copy(pos, p->origin_gl);
+
+        camera_position_update(&p->cam, p);
+
+        return 0;
 }
 
 int player_hint(player *p, player *hint)
@@ -422,7 +530,7 @@ int player_init(player *p)
         if (!p)
                 return -EINVAL;
 
-        p->cam.time_last = glfwGetTime();
+        timestamp_init(&player_ts);
 
         return 0;
 }
