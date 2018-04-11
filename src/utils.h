@@ -85,6 +85,8 @@ typedef float *pvec2;
 typedef float *pvec3;
 typedef float *pvec4;
 
+void ivec3_copy(const ivec3 src, ivec3 dest);
+
 /**
  * Equality Test
  */

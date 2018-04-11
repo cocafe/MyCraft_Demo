@@ -14,6 +14,13 @@
 #include "debug.h"
 #include "utils.h"
 
+extern inline void ivec3_copy(const ivec3 src, ivec3 dest)
+{
+        dest[0] = src[0];
+        dest[1] = src[1];
+        dest[2] = src[2];
+}
+
 int vec2_equal(const vec2 a, const vec2 b)
 {
         float epsilon = FLT_EPSILON;
