@@ -41,7 +41,7 @@ static player default_player = {
 
         .speed_sets = {
                 .fly = 10.0f,
-                .fly_noclip = 0,
+                .fly_noclip = 1,
 
                 .air = 4.0f,
                 .walk = 5.0f,
@@ -296,45 +296,51 @@ int player_collision_test(player *p, world *w, vec3 origin_t)
  * @param w: pointer to world to perform collision test with blocks
  * @param dir: moving direction vector
  * @param y: also move along Y axis
+ * @param god: no clip, no collision test
  * @param ret: (X, Y, Z) axis collision test result
  */
-void __player_move(player *p, world *w, const vec3 dir, int y, ivec3 ret)
+void __player_move(player *p, world *w, const vec3 dir, int y, int god, ivec3 ret)
 {
         // Temp origin to perform collision test
         vec3 o = { 0 };
-        ivec3 r = { 0 };
+
+        // Collision test results
+        ivec3 c = { 0 };
 
         // X
         glm_vec_copy(p->origin_gl, o);
-
         o[X] += dir[X];
-        r[X] = player_collision_test(p, w, o);
 
-        if (!r[X])
+        if (!god)
+                c[X] = player_collision_test(p, w, o);
+
+        if (!c[X])
                 p->origin_gl[X] = o[X];
 
         // Y
         if (y) {
                 glm_vec_copy(p->origin_gl, o);
-
                 o[Y] += dir[Y];
-                r[Y] = player_collision_test(p, w, o);
 
-                if (!r[Y])
+                if (!god)
+                        c[Y] = player_collision_test(p, w, o);
+
+                if (!c[Y])
                         p->origin_gl[Y] = o[Y];
         }
 
         // Z
         glm_vec_copy(p->origin_gl, o);
-
         o[Z] += dir[Z];
-        r[Z] = player_collision_test(p, w, o);
 
-        if (!r[Z])
+        if (!god)
+                c[Z] = player_collision_test(p, w, o);
+
+        if (!c[Z])
                 p->origin_gl[Z] = o[Z];
 
         if (ret)
-                ivec3_copy(r, ret);
+                ivec3_copy(c, ret);
 }
 
 static inline int player_is_standing(GLFWwindow *window)
@@ -398,13 +404,13 @@ void player_move(player *p, world *w, GLFWwindow *window)
 
         // Forward
         if (glfwKeyPressed(window, GLFW_KEY_W)) {
-                __player_move(p, w, vec_t, 0, NULL);
+                __player_move(p, w, vec_t, 0, 0, NULL);
         }
 
         // Backward
         if (glfwKeyPressed(window, GLFW_KEY_S)) {
                 glm_vec_inv(vec_t);
-                __player_move(p, w, vec_t, 0, NULL);
+                __player_move(p, w, vec_t, 0, 0, NULL);
         }
 
         // Vector for left/right
@@ -414,12 +420,12 @@ void player_move(player *p, world *w, GLFWwindow *window)
         // Left
         if (glfwKeyPressed(window, GLFW_KEY_A)) {
                 glm_vec_inv(vec_t);
-                __player_move(p, w, vec_t, 0, NULL);
+                __player_move(p, w, vec_t, 0, 0, NULL);
         }
 
         // Right
         if (glfwKeyPressed(window, GLFW_KEY_D)) {
-                __player_move(p, w, vec_t, 0, NULL);
+                __player_move(p, w, vec_t, 0, 0, NULL);
         }
 }
 
@@ -466,7 +472,7 @@ void player_gravity_fall(player *p, world *w)
                 glm_vec_scale(world_up, ts->delta, vec_t);
                 glm_vec_scale(vec_t, pspeed->vertical, vec_t);
 
-                __player_move(p, w, vec_t, 1, collision);
+                __player_move(p, w, vec_t, 1, 0, collision);
 
                 // Hit ground during falling
                 if (collision[Y]) {
@@ -504,6 +510,7 @@ void player_fly(player *p, world *w, GLFWwindow *window)
         vec3 world_up = { 0.0f, 1.0f, 0.0f };
         vec3 vec_t = { 0 };
         float speed = sets->fly;
+        int god = sets->fly_noclip;
 
         if (glfwKeyPressed(window, GLFW_KEY_LEFT_SHIFT)) {
                 speed *= sets->mod_sprint;
@@ -515,13 +522,13 @@ void player_fly(player *p, world *w, GLFWwindow *window)
 
         // Forward
         if (glfwKeyPressed(window, GLFW_KEY_W)) {
-                __player_move(p, w, vec_t, 1, NULL);
+                __player_move(p, w, vec_t, 1, god, NULL);
         }
 
         // Backward
         if (glfwKeyPressed(window, GLFW_KEY_S)) {
                 glm_vec_inv(vec_t);
-                __player_move(p, w, vec_t, 1, NULL);
+                __player_move(p, w, vec_t, 1, god, NULL);
         }
 
         // Vector for left/right
@@ -531,12 +538,12 @@ void player_fly(player *p, world *w, GLFWwindow *window)
         // Left
         if (glfwKeyPressed(window, GLFW_KEY_A)) {
                 glm_vec_inv(vec_t);
-                __player_move(p, w, vec_t, 1, NULL);
+                __player_move(p, w, vec_t, 1, god, NULL);
         }
 
         // Right
         if (glfwKeyPressed(window, GLFW_KEY_D)) {
-                __player_move(p, w, vec_t, 1, NULL);
+                __player_move(p, w, vec_t, 1, god, NULL);
         }
 
         // Vector for up/down
@@ -545,13 +552,13 @@ void player_fly(player *p, world *w, GLFWwindow *window)
 
         // Up
         if (glfwKeyPressed(window, GLFW_KEY_SPACE)) {
-                __player_move(p, w, vec_t, 1, NULL);
+                __player_move(p, w, vec_t, 1, god, NULL);
         }
 
         // Down
         if (glfwKeyPressed(window, GLFW_KEY_LEFT_CONTROL)) {
                 glm_vec_inv(vec_t);
-                __player_move(p, w, vec_t, 1, NULL);
+                __player_move(p, w, vec_t, 1, god, NULL);
         }
 }
 
