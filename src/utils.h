@@ -141,6 +141,9 @@ typedef struct timestamp {
 int timestamp_init(timestamp *t);
 int timestamp_update(timestamp *t);
 
+int glfwKeyPressed(GLFWwindow *window, int key);
+int glfwKeyReleased(GLFWwindow *window, int key);
+
 /**
  * Sequence List Implementation
  */

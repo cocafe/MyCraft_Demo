@@ -350,6 +350,16 @@ void image_vertical_flip(uint8_t *data, uint32_t width, uint32_t height)
         free(new_data);
 }
 
+int glfwKeyPressed(GLFWwindow *window, int key)
+{
+        return (glfwGetKey(window, key) == GLFW_PRESS);
+}
+
+int glfwKeyReleased(GLFWwindow *window, int key)
+{
+        return (glfwGetKey(window, key) == GLFW_RELEASE);
+}
+
 /**
  * Time Stamp
  */
