@@ -31,7 +31,7 @@
 #define JUMP_HEIGHT                             (1.25f * BLOCK_EDGE_LEN_GLUNIT)
 
 static player default_player = {
-        .origin_gl = { 0.0f, PLAYER_HEIGHT / 2.0f , 5.0f },
+        .origin_gl = { 0.0f, PLAYER_HEIGHT / 2.0f , 0.0f },
 
         .size = {
                 .height = PLAYER_HEIGHT,
@@ -49,7 +49,7 @@ static player default_player = {
                 .jump = 0.0f,
                 .jump_height = JUMP_HEIGHT,
 
-                .mod_sprint = 1.30f,
+                .mod_sprint = 1.40f,
                 .mod_sneak = 0.5f,
 
                 .view = 0.001f,
