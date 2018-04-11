@@ -415,8 +415,6 @@ int world_add_block(world *w, block *b)
 
         chunk_add_block(c, b);
 
-        // TODO: Check whether block should be draw, if so generate model
-
         return 0;
 }
 
@@ -463,9 +461,6 @@ int chunk_vertices_pack(chunk *c)
         linklist_for_each_node(pos, c->blocks->head) {
                 block *b = pos->data;
 
-                block_model_face_init(&b->model);
-                block_model_face_generate(&b->model, b->blk_attr);
-
                 for (int i = 0; i < CUBE_QUAD_FACES; ++i) {
                         block_face *f = &(b->model.faces[i]);
 
@@ -476,8 +471,6 @@ int chunk_vertices_pack(chunk *c)
                                 seqlist_append(c->vertices, &(f->vertices[j]));
                         }
                 }
-
-                block_model_face_deinit(&b->model);
         }
 
         seqlist_shrink(c->vertices);
@@ -540,16 +533,25 @@ int chunk_cull_blocks(chunk *c, world *w)
 
                 for (int i = 0; i < CUBE_QUAD_FACES; ++i) {
                         block_face *f = &(b->model.faces[i]);
+                        block_model *m = &b->model;
                         ivec3 o_near = { 0 };
                         block *b_near;
 
                         block_near_origin_get(b, i, o_near);
                         b_near = world_get_block(w, o_near);
 
-                        if (!b_near)
-                                f->visible = 1;
-                        else
-                                f->visible = 0;
+                        if (!b_near) {
+                                if (!f->visible) {
+                                        f->visible = 1;
+                                        block_model_face_init(f);
+                                        block_model_face_generate(f, m, b->blk_attr, i);
+                                }
+                        } else {
+                                if (f->visible) {
+                                        f->visible = 0;
+                                        block_model_face_deinit(f);
+                                }
+                        }
                 }
         }
 
