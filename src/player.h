@@ -50,17 +50,19 @@ typedef struct player_speed {
 } player_speed;
 
 typedef struct player_speed_sets {
-        float fly;
-        float air;
-        float walk;
+        float   fly;
+        int     fly_noclip;
 
-        float jump;
-        float jump_height;
+        float   air;
+        float   walk;
 
-        float mod_sprint;
-        float mod_sneak;
+        float   jump;
+        float   jump_height;
 
-        float view;
+        float   mod_sprint;
+        float   mod_sneak;
+
+        float   view;
 } player_speed_sets;
 
 typedef struct player {
@@ -78,6 +80,7 @@ typedef struct player {
 
 void player_movement_perform(player *p, world *w, GLFWwindow *window);
 
+void player_key_callback(player *p, int key, int action);
 int player_position_set(player *p, vec3 pos);
 
 int player_hint(player *p, player *hint);
