@@ -57,6 +57,8 @@ static player default_player = {
 
         .cam = {
                 .fov = FOV_NORMAL,
+                .fov_zoom = FOV_ZOOMING,
+                .zooming = 0,
 
                 .angel_vertical = 0.0,
                 .angel_horizontal = M_PI,
@@ -122,9 +124,10 @@ void camera_position_update(camera *cam, player *p)
 
 void camera_perspective_compute(camera *cam)
 {
+        float fov = cam->zooming ? cam->fov_zoom : cam->fov;
         vec3 look_at = { 0, 0, 0 };
 
-        glm_perspective(glm_rad(cam->fov),
+        glm_perspective(glm_rad(fov),
                         (float)cam->view_width / (float)cam->view_height,
                         cam->clamp_near, cam->clamp_far, cam->mat_persp);
 
@@ -612,6 +615,18 @@ void player_key_callback(player *p, int key, int action)
 {
         if (key == GLFW_KEY_F && action == GLFW_PRESS) {
                 player_fly_switch(p);
+        }
+
+        if (key == GLFW_KEY_C) {
+                switch (action) {
+                        case GLFW_PRESS:
+                                p->cam.zooming = 1;
+                                break;
+
+                        case GLFW_RELEASE:
+                                p->cam.zooming = 0;
+                                break;
+                }
         }
 }
 

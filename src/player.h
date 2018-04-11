@@ -12,11 +12,14 @@
 #define FOV_MINIMAL                     (30.0f)
 #define FOV_NORMAL                      (70.0f)
 #define FOV_MAXIMUM                     (120.0f)
+#define FOV_ZOOMING                     (15.0f)
 
 typedef struct camera {
         vec3                    position;
 
         float                   fov;
+        float                   fov_zoom;
+        int                     zooming;
 
         int32_t                 view_width;
         int32_t                 view_height;
