@@ -76,7 +76,6 @@ void camera_vectors_compute(camera *cam, GLFWwindow *window, double speed)
         double x, y;
         double set_x, set_y;
 
-        // TODO: GLFW Callback
         glfwGetWindowSize(window, &cam->view_width, &cam->view_height);
 
         set_x = (double)cam->view_width / 2;
