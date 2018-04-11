@@ -57,7 +57,6 @@ static player default_player = {
 
         .cam = {
                 .fov = FOV_NORMAL,
-                .fov_delta = +5.0f,
 
                 .angel_vertical = 0.0,
                 .angel_horizontal = M_PI,
@@ -121,11 +120,11 @@ void camera_position_update(camera *cam, player *p)
         glm_vec_add(p->origin_gl, p->cam_offset, cam->position);
 }
 
-void camera_perspective_compute(camera *cam, int32_t dynamic_fov)
+void camera_perspective_compute(camera *cam)
 {
         vec3 look_at = { 0, 0, 0 };
 
-        glm_perspective(dynamic_fov ? cam->fov + cam->fov_delta : cam->fov,
+        glm_perspective(glm_rad(cam->fov),
                         (float)cam->view_width / (float)cam->view_height,
                         cam->clamp_near, cam->clamp_far, cam->mat_persp);
 
@@ -135,7 +134,6 @@ void camera_perspective_compute(camera *cam, int32_t dynamic_fov)
         glm_mat4_mulN((mat4 *[]){&cam->mat_persp, &cam->mat_camera},
                       2, cam->mat_transform);
 }
-
 
 static inline int __point_on_cube_edge(const vec3 point_gl, int l)
 {
@@ -384,11 +382,11 @@ void player_move(player *p, world *w, GLFWwindow *window)
 
                 speed->horizontal = sets->walk;
 
-                if (glfwKeyPressed(window, GLFW_KEY_LEFT_SHIFT)) {
+                if (glfwKeyPressed(window, GLFW_KEY_LEFT_SHIFT))
                         speed->horizontal = sets->walk * sets->mod_sprint;
-                } else if (glfwKeyPressed(window, GLFW_KEY_LEFT_CONTROL)) {
+
+                if (glfwKeyPressed(window, GLFW_KEY_LEFT_CONTROL))
                         speed->horizontal = sets->walk * sets->mod_sneak;
-                }
         }
 
         // Vectors for forward/backward
@@ -510,9 +508,8 @@ void player_fly(player *p, world *w, GLFWwindow *window)
         float speed = sets->fly;
         int god = sets->fly_noclip;
 
-        if (glfwKeyPressed(window, GLFW_KEY_LEFT_SHIFT)) {
+        if (glfwKeyPressed(window, GLFW_KEY_LEFT_SHIFT))
                 speed *= sets->mod_sprint;
-        }
 
         // Vectors for forward/backward
         glm_vec_scale(cam->vector_front, ts->delta, vec_t);
@@ -597,7 +594,7 @@ void player_movement_perform(player *p, world *w, GLFWwindow *window)
 
         camera_position_update(cam, p);
         camera_vectors_compute(cam, window, speed_sets->view);
-        camera_perspective_compute(cam, 0);
+        camera_perspective_compute(cam);
 }
 
 static inline void player_fly_switch(player *p)

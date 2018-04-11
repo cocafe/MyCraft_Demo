@@ -17,7 +17,6 @@ typedef struct camera {
         vec3                    position;
 
         float                   fov;
-        float                   fov_delta;
 
         int32_t                 view_width;
         int32_t                 view_height;
