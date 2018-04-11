@@ -47,32 +47,36 @@ typedef enum player_movement {
 typedef struct player_speed {
         float vertical;
         float horizontal;
-
-        float fly;
-        float fly_sprint;
-
-        float walk;
-        float sprint;
-        float sneak;
-        float move_air;
-
-        float jump;     // V0
-
-        float view;
 } player_speed;
 
+typedef struct player_speed_sets {
+        float fly;
+        float air;
+        float walk;
+
+        float jump;
+        float jump_height;
+
+        float mod_sprint;
+        float mod_sneak;
+
+        float view;
+} player_speed_sets;
+
 typedef struct player {
-        dimension       size;
-        vec3            origin_gl;
+        dimension               size;
+        vec3                    origin_gl;
 
-        camera          cam;
-        vec3            cam_offset;     // Position relative to player origin
+        camera                  cam;
+        // Position relative to player origin
+        vec3                    cam_offset;
 
-        player_movement state;
-        player_speed    speed;
+        player_movement         state;
+        player_speed            speed;
+        player_speed_sets       speed_sets;
 } player;
 
-void player_inputs_handle(player *p, world *w, GLFWwindow *window);
+void player_movement_perform(player *p, world *w, GLFWwindow *window);
 
 int player_position_set(player *p, vec3 pos);
 

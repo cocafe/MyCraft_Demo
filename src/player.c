@@ -28,16 +28,7 @@
 
 #define WORLD_GRAVITY                           (20.0f)
 
-#define JUMP_HEIGHT                             (1.2 * BLOCK_EDGE_LEN_GLUNIT)
-
-#define PLAYER_KEY(a, k) \
-        {                       \
-                .act = (a),     \
-                .key = (k),     \
-        }
-
-#define PLAYER_KEY_JUMP                         (GLFW_KEY_SPACE)
-#define PLAYER_KEY_SNEAK                        (GLFW_KEY_LEFT_CONTROL)
+#define JUMP_HEIGHT                             (1.25f * BLOCK_EDGE_LEN_GLUNIT)
 
 static player default_player = {
         .origin_gl = { 0.0f, PLAYER_HEIGHT / 2.0f , 5.0f },
@@ -48,20 +39,15 @@ static player default_player = {
                 .width  = PLAYER_WIDTH,
         },
 
-        .state = INAIR,
-
-        .speed = {
-                .fly = 15.0,
-                .fly_sprint = 20.0,
-
-                .walk = 5.0,
-                .sprint = 10.0,
-                .sneak = 1.0,
-                .move_air = 2.0,
-
-                .jump = 7.07,
-
-                .view = 0.001,
+        .speed_sets = {
+                .fly = 15.0f,
+                .air = 4.0f,
+                .walk = 5.0f,
+                .jump = 0.0f,
+                .jump_height = JUMP_HEIGHT,
+                .mod_sprint = 1.30f,
+                .mod_sneak = 0.5f,
+                .view = 0.001f,
         },
 
         .cam = {
@@ -74,6 +60,7 @@ static player default_player = {
                 .clamp_far = 256.0f,
                 .clamp_near = 0.1f,
         },
+
         .cam_offset = { 0.0f, +0.66f, 0.0f },
 };
 
@@ -342,70 +329,105 @@ void __player_move(player *p, world *w, const vec3 dir, int y, ivec3 ret)
                 p->origin_gl[Z] = o[Z];
 }
 
+static inline int player_is_standing(GLFWwindow *window)
+{
+        // Only on ground case: if (p->state == ONGROUND)
+
+        if (glfwKeyReleased(window, GLFW_KEY_W) &&
+            glfwKeyReleased(window, GLFW_KEY_S) &&
+            glfwKeyReleased(window, GLFW_KEY_A) &&
+            glfwKeyReleased(window, GLFW_KEY_D))
+                return 1;
+        else
+                return 0;
+}
+
+void player_stand(player *p)
+{
+        p->speed.horizontal = 0;
+}
+
 void player_move(player *p, world *w, GLFWwindow *window)
 {
-        player_speed *pspeed = &p->speed;
+        player_speed_sets *sets = &p->speed_sets;
+        player_speed *speed = &p->speed;
         timestamp *ts = &player_ts;
         camera *cam = &p->cam;
 
         vec3 world_up = { 0.0f, 1.0f, 0.0f };
         vec3 horizontal_front = { 0.0f };
         ivec3 collision = { 0 };
-        vec3 move = { 0.0f };
-
-        float speed = p->speed.walk;
-
-        // TODO: Horizontal accelerated speed
+        vec3 vec_t = { 0.0f };
 
         if (p->state == INAIR) {
-                speed = pspeed->move_air;
-        } else if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
-                speed = pspeed->sprint;
-        } else if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
-                speed = pspeed->sneak;
+                if (glfwKeyReleased(window, GLFW_KEY_LEFT_SHIFT)) {
+                        p->speed.horizontal = sets->air;
+                }
+        }
+
+        if (p->state == ONGROUND) {
+                if (player_is_standing(window)) {
+                        player_stand(p);
+                        return;
+                }
+
+                speed->horizontal = sets->walk;
+
+                if (glfwKeyPressed(window, GLFW_KEY_LEFT_SHIFT)) {
+                        speed->horizontal = sets->walk * sets->mod_sprint;
+                } else if (glfwKeyPressed(window, GLFW_KEY_LEFT_CONTROL)) {
+                        speed->horizontal = sets->walk * sets->mod_sneak;
+                }
         }
 
         // Vectors for forward/backward
         glm_cross(cam->vector_right, world_up, horizontal_front);
-        glm_vec_scale(horizontal_front, ts->delta, move);
-        glm_vec_scale(move, speed, move);
-        glm_vec_inv(move);
+        glm_vec_scale(horizontal_front, ts->delta, vec_t);
+        glm_vec_scale(vec_t, speed->horizontal, vec_t);
+        glm_vec_inv(vec_t);
 
         // TODO: Move range check
         // TODO: Clamp
 
         // Forward
-        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-                __player_move(p, w, move, 0, collision);
+        if (glfwKeyPressed(window, GLFW_KEY_W)) {
+                __player_move(p, w, vec_t, 0, collision);
         }
 
         // Backward
-        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-                glm_vec_inv(move);
-                __player_move(p, w, move, 0, collision);
+        if (glfwKeyPressed(window, GLFW_KEY_S)) {
+                glm_vec_inv(vec_t);
+                __player_move(p, w, vec_t, 0, collision);
         }
 
         // Vector for left/right
-        glm_vec_scale(cam->vector_right, ts->delta, move);
-        glm_vec_scale(move, speed, move);
+        glm_vec_scale(cam->vector_right, ts->delta, vec_t);
+        glm_vec_scale(vec_t, speed->horizontal, vec_t);
 
         // Left
-        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-                glm_vec_inv(move);
-                __player_move(p, w, move, 0, collision);
+        if (glfwKeyPressed(window, GLFW_KEY_A)) {
+                glm_vec_inv(vec_t);
+                __player_move(p, w, vec_t, 0, collision);
         }
 
         // Right
-        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-                __player_move(p, w, move, 0, collision);
-        }
-
-        if (player_collision_test(p, w, p->origin_gl)) {
-                p->state = INAIR;
+        if (glfwKeyPressed(window, GLFW_KEY_D)) {
+                __player_move(p, w, vec_t, 0, collision);
         }
 }
 
-void player_is_on_ground(player *p, world *w)
+static inline void player_land(player *p)
+{
+        p->state = ONGROUND;
+        p->speed.vertical = 0;
+}
+
+static inline void player_fall(player *p)
+{
+        p->state = INAIR;
+}
+
+int player_is_on_ground(player *p, world *w)
 {
         float dist_t = 0.01;
         vec3 origin_t = { 0 };
@@ -417,10 +439,9 @@ void player_is_on_ground(player *p, world *w)
         // Test whether we are on ground
         if (player_collision_test(p, w, origin_t)) {
                 // Collision detected
-                p->state = ONGROUND;
-                p->speed.vertical = 0;
+                return 1;
         } else {
-                p->state = INAIR;
+                return 0;
         }
 }
 
@@ -442,19 +463,26 @@ void player_gravity_fall(player *p, world *w)
 
                 // Hit ground during falling
                 if (collision[Y]) {
-                        p->state = ONGROUND;
-                        p->speed.vertical = 0;
+                        player_land(p);
                 }
         }
 }
 
 void player_jump(player *p, GLFWwindow *window)
 {
-        player_speed *pspeed = &p->speed;
+        player_speed *speed = &p->speed;
+        player_speed_sets *sets = &p->speed_sets;
 
-        if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+        // TODO: Update jump height
+
+        if (glfwKeyPressed(window, GLFW_KEY_SPACE)) {
                 if (p->state == ONGROUND) {
-                        pspeed->vertical = pspeed->jump;
+                        speed->vertical = sets->jump;
+
+                        if (glfwKeyPressed(window, GLFW_KEY_LEFT_SHIFT)) {
+                                speed->horizontal = sets->air * sets->mod_sprint;
+                        }
+
                         p->state = INAIR;
                 }
         }
@@ -477,20 +505,39 @@ void player_movement_handle(player *p, world *w, GLFWwindow *window)
         }
 }
 
-void player_inputs_handle(player *p, world *w, GLFWwindow *window)
+void player_movement_perform(player *p, world *w, GLFWwindow *window)
 {
         camera *cam = &p->cam;
-        player_speed *speed = &p->speed;
+        player_speed_sets *speed_sets = &p->speed_sets;
 
         timestamp_update(&player_ts);
 
-        player_is_on_ground(p, w);
+        if (player_is_on_ground(p, w)) {
+                player_land(p);
+        } else {
+                player_fall(p);
+        }
+
         player_movement_handle(p, w, window);
         player_gravity_fall(p, w);
 
         camera_position_update(cam, p);
-        camera_vectors_compute(cam, window, speed->view);
+        camera_vectors_compute(cam, window, speed_sets->view);
         camera_perspective_compute(cam, 0);
+}
+
+static inline void player_speed_sets_update(player *p)
+{
+        player_speed_sets *sets = &p->speed_sets;
+
+        /*
+         * v_t = v_0 + a * t
+         * s = v_0 * t + (1/2) * a * (t ^ 2)
+         *
+         * a = g, s = h, v_0 = sqrt(2 * g * h)
+         *
+         */
+        sets->jump = sqrtf(2 * WORLD_GRAVITY * sets->jump_height);
 }
 
 int player_position_set(player *p, vec3 pos)
@@ -531,6 +578,7 @@ int player_init(player *p)
                 return -EINVAL;
 
         timestamp_init(&player_ts);
+        player_speed_sets_update(p);
 
         return 0;
 }
