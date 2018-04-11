@@ -39,40 +39,32 @@ static vec3 cube_normals[] = {
         [CUBE_RIGHT]    = {  1.0f,  0.0f,  0.0f },
 };
 
-int block_model_face_init(block_model *model)
+int block_model_face_init(block_face *f)
 {
         size_t face_vertices = VERTICES_TRIANGULATE_QUAD;
 
-        if (!model)
+        if (!f)
                 return -EINVAL;
 
-        for (int i = 0; i < CUBE_QUAD_FACES; ++i) {
-                block_face *f = &(model->faces[i]);
+        if (!f->visible)
+                return 0;
 
-                if (!f->visible)
-                        continue;
-
-                f->vertices = memalloc(sizeof(vertex_attr) * face_vertices);
-                if (!f->vertices) {
-                        pr_err_alloc();
-                        return -ENOMEM;
-                }
+        f->vertices = memalloc(sizeof(vertex_attr) * face_vertices);
+        if (!f->vertices) {
+                pr_err_alloc();
+                return -ENOMEM;
         }
 
         return 0;
 }
 
-int block_model_face_deinit(block_model *model)
+int block_model_face_deinit(block_face *f)
 {
-        if (!model)
+        if (!f)
                 return -EINVAL;
 
-        for (int i = 0; i < CUBE_QUAD_FACES; ++i) {
-                block_face *f = &(model->faces[i]);
-
-                if (f->vertices)
-                        memfree((void **)&f->vertices);
-        }
+        if (f->vertices)
+                memfree((void **)&f->vertices);
 
         return 0;
 }
@@ -270,7 +262,35 @@ void block_model_face_vertex_normal(block_face *face, const vec3 origin_gl)
         }
 }
 
-int block_model_face_generate(block_model *model, block_attr *blk_attr)
+/**
+ * block_model_face_generate() - generate single block face vertices
+ *
+ * @param f: pointer to face
+ * @param m: pointer to model
+ * @param attr: pointer to block attribute
+ * @param idx: face index
+ * @return 0 on success
+ */
+int block_model_face_generate(block_face *f, block_model *m,
+                              block_attr *attr, int idx)
+{
+        if (!f || !m || !attr)
+                return -EINVAL;
+
+        if (!f->visible)
+                return 0;
+
+        if (!f->vertices)
+                return -ENODATA;
+
+        block_model_face_vertex(f, attr, m->origin_gl, idx);
+        block_model_face_vertex_normal(f, m->origin_gl);
+        block_model_face_uv(f, attr, idx);
+
+        return 0;
+}
+
+int block_model_generate(block_model *model, block_attr *blk_attr)
 {
         if (!model || !blk_attr)
                 return -EINVAL;
@@ -278,12 +298,11 @@ int block_model_face_generate(block_model *model, block_attr *blk_attr)
         for (int i = 0; i < CUBE_QUAD_FACES; ++i) {
                 block_face *face = &(model->faces[i]);
 
-                if (!face->visible)
-                        continue;
-
-                block_model_face_vertex(face, blk_attr, model->origin_gl, i);
-                block_model_face_vertex_normal(face, model->origin_gl);
-                block_model_face_uv(face, blk_attr, i);
+                if (block_model_face_generate(face, model, blk_attr, i)) {
+                        pr_err_func("block model (%f, %f, %f) face %d failed\n",
+                                    model->origin_gl[X], model->origin_gl[Y],
+                                    model->origin_gl[Z], i);
+                }
         }
 
         return 0;
@@ -306,7 +325,10 @@ int block_model_deinit(block_model *model)
         if (!model)
                 return -EINVAL;
 
-        block_model_face_deinit(model);
+        for (int i = 0; i < CUBE_QUAD_FACES; ++i) {
+                block_face *f = &(model->faces[i]);
+                block_model_face_deinit(f);
+        }
 
         return 0;
 }
