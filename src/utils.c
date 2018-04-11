@@ -737,6 +737,8 @@ void *linklist_append(linklist *list, void *element)
                 curr = curr->next;
 
         curr->next = node;
+        curr->next->prev = curr;
+
         list->element_count++;
 
 out:
