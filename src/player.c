@@ -211,8 +211,7 @@ int collision_test_block_point(world *w, const vec3 point_gl)
         return 0;
 }
 
-void player_collision_test_vertices(vec3 *vertices, const vec3 origin,
-                                    dimension size)
+void player_hitbox_vertices(vec3 *vertices, const vec3 origin, dimension size)
 {
         float delta_x = size.width / 2;
         float delta_y = size.height / 2;
@@ -279,7 +278,7 @@ int player_collision_test(player *p, world *w, vec3 origin_t)
 {
         vec3 test_vertices[VERTICES_COLLISION_TEST];
 
-        player_collision_test_vertices(test_vertices, origin_t, p->size);
+        player_hitbox_vertices(test_vertices, origin_t, p->size);
 
         for (int i = 0; i < VERTICES_COLLISION_TEST; ++i) {
                 if (collision_test_block_point(w, test_vertices[i]))
