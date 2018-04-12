@@ -9,11 +9,10 @@
 
 #define CUBE_QUAD_FACES                 (6)
 
-#define BLOCK_SHADER_FOLDER             "resource/shader/"
-#define BLOCK_SHADER_FILE(file)         (BLOCK_SHADER_FOLDER file SUFFIX_GLSL)
+#define BLOCK_SHADER_FILE(file)         (RESOURCES_SHADER_PATH file SUFFIX_GLSL)
 
-#define BLOCK_TEXTURE_FOLDER            "resource/texture/block/"
-#define BLOCK_TEXTURE_FILE(file)        (BLOCK_TEXTURE_FOLDER file SUFFIX_PNG)
+#define BLOCK_TEXTURE_PATH              RESOURCES_TEXTURE_PATH "block/"
+#define BLOCK_TEXTURE_FILE(file)        (BLOCK_TEXTURE_PATH file SUFFIX_PNG)
 
 /**
  *        | +Y (height)

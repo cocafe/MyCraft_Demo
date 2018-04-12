@@ -34,6 +34,13 @@
         SEC_TO_MS(glfwGetTime() - profiler_timestamp))
 
 /**
+ * Resources Paths
+ */
+#define RESOURCES_PATH                  "./resource/"
+#define RESOURCES_SHADER_PATH           RESOURCES_PATH "shader/"
+#define RESOURCES_TEXTURE_PATH          RESOURCES_PATH "texture/"
+
+/**
  * File
  */
 #define FILEPATH_MAX_LEN                (1024)
