@@ -637,7 +637,7 @@ static text_font font_ubuntu = {
         .char_height    = 24,
 };
 
-static text_font *font_render = &font_ubuntu;
+static text_font *g_font = &font_ubuntu;
 
 void text_string_prepare(text_font *font, const char *str, int x, int y,
                          float scale, int fb_w, int fb_h,
@@ -738,7 +738,7 @@ int text_string_draw(const char *str, int x, int y, float scale, int background,
                      int fb_width, int fb_height)
 {
         float screen_size[2] = { fb_width, fb_height };
-        text_font *font = font_render;
+        text_font *font = g_font;
         gl_attr *glattr = &font->glattr;
         seqlist vertices;
         seqlist uvs;
@@ -793,7 +793,7 @@ int text_string_draw(const char *str, int x, int y, float scale, int background,
 
 int text_render_init(void)
 {
-        text_font *font = font_render;
+        text_font *font = g_font;
         int ret;
 
         ret = image_png32_load(&font->png, font->texel_file);
@@ -850,7 +850,7 @@ free_png:
 
 int text_render_deinit(void)
 {
-        text_font *font = font_render;
+        text_font *font = g_font;
         gl_attr *glattr = &font->glattr;
 
         image_png_free(&font->png);
