@@ -711,14 +711,14 @@ void text_string_prepare(text_font *font, const char *str, int x, int y,
                 vec2 uv[VERTICES_QUAD];
 
                 x1 = uv_x;
-                y1 = uv_y;
+                y1 = uv_y + uv_y_div * uv_h;
                 x2 = uv_x + uv_x_div * uv_w;
-                y2 = uv_y + uv_y_div * uv_h;
+                y2 = uv_y;
 
-                uv[UL][X] = x1; uv[UL][Y] = y1;
-                uv[UR][X] = x2; uv[UR][Y] = y1;
-                uv[LL][X] = x1; uv[LL][Y] = y2;
-                uv[LR][X] = x2; uv[LR][Y] = y2;
+                uv[UL][X] = x1; uv[UL][Y] = y2;
+                uv[UR][X] = x2; uv[UR][Y] = y2;
+                uv[LL][X] = x1; uv[LL][Y] = y1;
+                uv[LR][X] = x2; uv[LR][Y] = y1;
 
                 seqlist_append(uvs, uv[UL]);
                 seqlist_append(uvs, uv[UR]);
