@@ -905,7 +905,6 @@ void fps_meter_measure(fps_meter *fps)
         fps->frame_time_curr = glfwGetTime();
 
         if ((fps->frame_time_curr - fps->frame_time_last) >= sec_1) {
-                // FIXME: If we render fps within other thread, this needs sync?
                 fps->fps = fps->frame_count;
                 fps->frame_time_ms = ms_1000 / (double)fps->frame_count;
 
@@ -914,7 +913,12 @@ void fps_meter_measure(fps_meter *fps)
         }
 }
 
-void fps_meter_render(fps_meter *fps)
+void fps_meter_draw(fps_meter *fps, int fb_width, int fb_height)
 {
-        // TODO: fps_meter_render()
+        char buf[256];
+
+        sprintf_s(buf, sizeof(buf), "%d fps (%.4lf ms)\n",
+                  fps->fps, fps->frame_time_ms);
+
+        text_string_draw(buf, 0, 0, 1, 1, fb_width, fb_height);
 }

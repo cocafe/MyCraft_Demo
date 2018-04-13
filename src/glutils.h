@@ -121,6 +121,6 @@ typedef struct fps_meter {
 int fps_meter_init(fps_meter *fps);
 void fps_meter_count(fps_meter *fps);
 void fps_meter_measure(fps_meter *fps);
-void fps_meter_render(fps_meter *fps);
+void fps_meter_draw(fps_meter *fps, int fb_width, int fb_height);
 
 #endif //MYCRAFT_DEMO_GLUTILS_H
