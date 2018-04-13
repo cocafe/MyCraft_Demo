@@ -642,7 +642,8 @@ static text_font font_ubuntu = {
 static text_font *font_render = &font_ubuntu;
 
 void text_string_prepare(text_font *font, const char *str, int x, int y,
-                         float scale, seqlist *vertices, seqlist *uvs)
+                         float scale, int fb_w, int fb_h,
+                         seqlist *vertices, seqlist *uvs)
 {
         enum corner {
                 UL = V1,
@@ -669,14 +670,18 @@ void text_string_prepare(text_font *font, const char *str, int x, int y,
         int column = font->texel_width / font->cell_width;
         int row = font->texel_height / font->cell_height;
 
-        float char_w = font->char_width;
-        float char_h = font->char_height;
+        int char_w = font->char_width;
+        int char_h = font->char_height;
 
         float uv_x_div = 1.0f / (float)column;
         float uv_y_div = 1.0f / (float)row;
 
-        float uv_h = char_h / font->cell_height;
-        float uv_w = char_w / font->cell_width;
+        float uv_h = (float)char_h / font->cell_height;
+        float uv_w = (float)char_w / font->cell_width;
+
+        // Flip (0, 0) from lower-left to upper-left
+        UNUSED_PARAM(fb_w);
+        y = fb_h - font->cell_height - y;
 
         for (size_t i = 0; i < strlen(str); ++i) {
                 vec2 vertex[VERTICES_QUAD];
@@ -742,7 +747,7 @@ int text_string_draw(const char *str, int x, int y, float scale, int fb_width, i
         seqlist_init(&vertices, sizeof(vec2), 32);
         seqlist_init(&uvs, sizeof(vec2), 32);
 
-        text_string_prepare(font, str, x, y, scale, &vertices, &uvs);
+        text_string_prepare(font, str, x, y, scale, fb_width, fb_height, &vertices, &uvs);
 
         glattr->vertex = buffer_create(vertices.data,
                                        vertices.element_size * vertices.count_utilized);
