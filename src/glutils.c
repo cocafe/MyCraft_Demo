@@ -917,7 +917,7 @@ void fps_meter_draw(fps_meter *fps, int fb_width, int fb_height)
 {
         char buf[256];
 
-        sprintf_s(buf, sizeof(buf), "%d fps (%.4lf ms)\n",
+        sprintf_s(buf, sizeof(buf), " %d fps (%.4lf ms) ",
                   fps->fps, fps->frame_time_ms);
 
         text_string_draw(buf, 0, 0, 1, 1, fb_width, fb_height);
