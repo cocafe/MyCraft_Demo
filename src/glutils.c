@@ -591,13 +591,6 @@ del_normal:
         goto free_alloc;
 }
 
-void gl_vbo_buffer_delete(gl_attr *glattr)
-{
-        buffer_delete(&glattr->vbo_index);
-        buffer_delete(&glattr->vertex);
-        buffer_delete(&glattr->vertex_nrm);
-}
-
 int gl_vbo_is_empty(gl_vbo *vbo)
 {
         if (!vbo)
