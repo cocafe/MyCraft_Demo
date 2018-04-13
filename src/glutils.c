@@ -794,6 +794,7 @@ int text_string_draw(const char *str, int x, int y, float scale, int background,
 int text_render_init(void)
 {
         text_font *font = g_font;
+        gl_attr *glattr = &font->glattr;
         int ret;
 
         ret = image_png32_load(&font->png, font->texel_file);
@@ -804,7 +805,7 @@ int text_render_init(void)
         if (ret)
                 goto free_png;
 
-        gl_attr_init(&font->glattr);
+        gl_attr_init(glattr);
 
         font->texel = texture_png_create(&font->png, FILTER_NEAREST, 0);
         ret = glIsTexture(font->texel);
@@ -820,16 +821,16 @@ int text_render_init(void)
                 goto free_texel;
         }
 
-        font->glattr.program = program_create(TEXT_SHADER("text_vertex"),
+        glattr->program = program_create(TEXT_SHADER("text_vertex"),
                                            TEXT_SHADER("text_fragment"));
-        ret = glIsProgram(font->glattr.program);
+        ret = glIsProgram(glattr->program);
         if (ret == GL_FALSE) {
                 pr_err_func("failed to load font shaders\n");
                 goto free_texel_bg;
         }
 
-        font->glattr.sampler = glGetUniformLocation(font->glattr.program, "sampler");
-        font->glattr.uniform_1 = glGetUniformLocation(font->glattr.program, "screen_size");
+        glattr->sampler = glGetUniformLocation(font->glattr.program, "sampler");
+        glattr->uniform_1 = glGetUniformLocation(font->glattr.program, "screen_size");
 
         return 0;
 
