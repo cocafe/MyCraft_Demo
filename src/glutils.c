@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 #include <memory.h>
 #include <errno.h>
 
@@ -605,6 +606,235 @@ int gl_vbo_is_empty(gl_vbo *vbo)
         if (seqlist_is_empty(&vbo->indices) &&
             seqlist_is_empty(&vbo->vbo_attrs))
                 return 1;
+
+        return 0;
+}
+
+/**
+ * String Rendering
+ */
+
+#define TEXTURE_FONT(file)            (RESOURCES_TEXTURE_PATH file SUFFIX_PNG)
+#define TEXT_SHADER(file)             (RESOURCES_SHADER_PATH file SUFFIX_GLSL)
+
+typedef struct text_font {
+        const char      *texel_file;
+        int             texel_width;
+        int             texel_height;
+        int             cell_width;
+        int             cell_height;
+        int             char_width;
+        int             char_height;
+        image_png       png;
+        gl_attr         glattr;
+} text_font;
+
+static text_font font_ubuntu = {
+        .texel_file     = TEXTURE_FONT("font_ubuntu"),
+        .texel_width    = 512,
+        .texel_height   = 512,
+        .cell_width     = 32,
+        .cell_height    = 32,
+        .char_width     = 12,
+        .char_height    = 24,
+};
+
+static text_font *font_render = &font_ubuntu;
+
+void text_string_prepare(text_font *font, const char *str, int x, int y,
+                         float scale, seqlist *vertices, seqlist *uvs)
+{
+        enum corner {
+                UL = V1,
+                UR = V2,
+                LL = V3,
+                LR = V4,
+        };
+
+        /**
+         *
+         * (x1, y2) ----- (x2, y2)    ___
+         * |  UL            UR   |     |
+         * |                     |     |
+         * |                     |     |
+         * |                     | char height
+         * |                     |     |
+         * |  LL            LR   |     |
+         * (x1, y1) ----- (x2, y1)    _|_
+         *
+         * |---- char width -----|
+         *
+         */
+
+        int column = font->texel_width / font->cell_width;
+        int row = font->texel_height / font->cell_height;
+
+        float char_w = font->char_width;
+        float char_h = font->char_height;
+
+        float uv_x_div = 1.0f / (float)column;
+        float uv_y_div = 1.0f / (float)row;
+
+        float uv_h = char_h / font->cell_height;
+        float uv_w = char_w / font->cell_width;
+
+        for (size_t i = 0; i < strlen(str); ++i) {
+                vec2 vertex[VERTICES_QUAD];
+
+                float x1 = x + (i * char_w) * scale;
+                float y1 = y;
+                float x2 = x1 + char_w * scale;
+                float y2 = y1 + char_h * scale;
+
+                vertex[UL][X] = x1; vertex[UL][Y] = y2;
+                vertex[UR][X] = x2; vertex[UR][Y] = y2;
+                vertex[LL][X] = x1; vertex[LL][Y] = y1;
+                vertex[LR][X] = x2; vertex[LR][Y] = y1;
+
+                // Two triangles, clock-wise
+                seqlist_append(vertices, vertex[UL]);
+                seqlist_append(vertices, vertex[UR]);
+                seqlist_append(vertices, vertex[LL]);
+
+                seqlist_append(vertices, vertex[UR]);
+                seqlist_append(vertices, vertex[LR]);
+                seqlist_append(vertices, vertex[LL]);
+
+                char charcode = str[i];
+                float uv_x = (charcode % column) / (float)column;
+                float uv_y = (charcode / row) / (float)row;
+                vec2 uv[VERTICES_QUAD];
+
+                x1 = uv_x;
+                y1 = uv_y;
+                x2 = uv_x + uv_x_div * uv_w;
+                y2 = uv_y + uv_y_div * uv_h;
+
+                uv[UL][X] = x1; uv[UL][Y] = y1;
+                uv[UR][X] = x2; uv[UR][Y] = y1;
+                uv[LL][X] = x1; uv[LL][Y] = y2;
+                uv[LR][X] = x2; uv[LR][Y] = y2;
+
+                seqlist_append(uvs, uv[UL]);
+                seqlist_append(uvs, uv[UR]);
+                seqlist_append(uvs, uv[LL]);
+
+                seqlist_append(uvs, uv[UR]);
+                seqlist_append(uvs, uv[LR]);
+                seqlist_append(uvs, uv[LL]);
+        }
+
+        seqlist_shrink(vertices);
+        seqlist_shrink(uvs);
+}
+
+int text_string_draw(const char *str, int x, int y, float scale, int fb_width, int fb_height)
+{
+        float screen_size[2] = { fb_width, fb_height };
+        text_font *font = font_render;
+        gl_attr *glattr = &font->glattr;
+        seqlist vertices;
+        seqlist uvs;
+
+        if (!str)
+                return -EINVAL;
+
+        seqlist_init(&vertices, sizeof(vec2), 32);
+        seqlist_init(&uvs, sizeof(vec2), 32);
+
+        text_string_prepare(font, str, x, y, scale, &vertices, &uvs);
+
+        glattr->vertex = buffer_create(vertices.data,
+                                       vertices.element_size * vertices.count_utilized);
+        glattr->vertex_uv = buffer_create(uvs.data,
+                                          uvs.element_size * uvs.count_utilized);
+
+        glUseProgram(glattr->program);
+
+        glUniform2fv(glattr->uniform_1, 1, &screen_size[0]);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, glattr->texel);
+        glUniform1i(glattr->sampler, 0);
+
+        glEnableVertexAttribArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, glattr->vertex);
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, (void *)0);
+
+        glEnableVertexAttribArray(1);
+        glBindBuffer(GL_ARRAY_BUFFER, glattr->vertex_uv);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void *)0);
+
+        glDrawArrays(GL_TRIANGLES, 0, (GLsizei)vertices.count_utilized);
+
+        glDisableVertexAttribArray(0);
+        glDisableVertexAttribArray(1);
+
+        buffer_delete(&glattr->vertex);
+        buffer_delete(&glattr->vertex_uv);
+
+        seqlist_deinit(&vertices);
+        seqlist_deinit(&uvs);
+
+        return 0;
+}
+
+int text_render_init(void)
+{
+        text_font *font = font_render;
+        int ret;
+
+        ret = image_png32_load(&font->png, font->texel_file);
+        if (ret)
+                return ret;
+
+        gl_attr_init(&font->glattr);
+
+        font->glattr.texel = texture_png_create(&font->png, FILTER_NEAREST, 0);
+        ret = glIsTexture(font->glattr.texel);
+        if (ret == GL_FALSE) {
+                pr_err_func("failed to create font texture\n");
+                goto free_png;
+        }
+
+        font->glattr.program = program_create(TEXT_SHADER("text_vertex"),
+                                           TEXT_SHADER("text_fragment"));
+        ret = glIsProgram(font->glattr.program);
+        if (ret == GL_FALSE) {
+                pr_err_func("failed to load font shaders\n");
+                goto free_texel;
+        }
+
+        font->glattr.sampler = glGetUniformLocation(font->glattr.program, "sampler");
+        font->glattr.uniform_1 = glGetUniformLocation(font->glattr.program, "screen_size");
+
+        return 0;
+
+free_texel:
+        texture_delete(&font->glattr.texel);
+
+free_png:
+        image_png_free(&font->png);
+
+        return ret;
+}
+
+int text_render_deinit(void)
+{
+        text_font *font = font_render;
+        gl_attr *glattr = &font->glattr;
+
+        image_png_free(&font->png);
+
+        if (glIsTexture(font->glattr.texel) != GL_FALSE) {
+                texture_delete(&font->glattr.texel);
+        }
+
+        if (glIsProgram(font->glattr.program) != GL_FALSE) {
+                program_delete(&font->glattr.program);
+        }
+
+        gl_attr_buffer_delete(glattr);
 
         return 0;
 }

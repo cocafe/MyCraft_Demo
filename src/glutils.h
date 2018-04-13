@@ -78,6 +78,10 @@ int gl_attr_buffer_delete(gl_attr *attr);
 int gl_vertices_alloc(vec3 **positions, vec3 **normals, vec2 **uvs, size_t count);
 void gl_vertices_free(vec3 **positions, vec3 **normals, vec2 **uvs);
 
+int text_string_draw(const char *str, int x, int y, float scale, int fb_width, int fb_height);
+int text_render_init(void);
+int text_render_deinit(void);
+
 /**
  * VBOs
  */
