@@ -619,6 +619,7 @@ int gl_vbo_is_empty(gl_vbo *vbo)
 
 typedef struct text_font {
         const char      *texel_file;
+        const char      *texel_file_bg;
         int             texel_width;
         int             texel_height;
         int             cell_width;
@@ -626,11 +627,15 @@ typedef struct text_font {
         int             char_width;
         int             char_height;
         image_png       png;
+        image_png       png_bg;
+        GLuint          texel;
+        GLuint          texel_bg;
         gl_attr         glattr;
 } text_font;
 
 static text_font font_ubuntu = {
         .texel_file     = TEXTURE_FONT("font_ubuntu"),
+        .texel_file_bg  = TEXTURE_FONT("font_ubuntu_bg"),
         .texel_width    = 512,
         .texel_height   = 512,
         .cell_width     = 32,
@@ -738,7 +743,8 @@ void text_string_prepare(text_font *font, const char *str, int x, int y,
         seqlist_shrink(uvs);
 }
 
-int text_string_draw(const char *str, int x, int y, float scale, int fb_width, int fb_height)
+int text_string_draw(const char *str, int x, int y, float scale, int background,
+                     int fb_width, int fb_height)
 {
         float screen_size[2] = { fb_width, fb_height };
         text_font *font = font_render;
@@ -753,6 +759,11 @@ int text_string_draw(const char *str, int x, int y, float scale, int fb_width, i
         seqlist_init(&uvs, sizeof(vec2), 32);
 
         text_string_prepare(font, str, x, y, scale, fb_width, fb_height, &vertices, &uvs);
+
+        if (background)
+                glattr->texel = font->texel_bg;
+        else
+                glattr->texel = font->texel;
 
         glattr->vertex = buffer_create(vertices.data,
                                        vertices.element_size * vertices.count_utilized);
@@ -798,13 +809,24 @@ int text_render_init(void)
         if (ret)
                 return ret;
 
+        ret = image_png32_load(&font->png_bg, font->texel_file_bg);
+        if (ret)
+                goto free_png;
+
         gl_attr_init(&font->glattr);
 
-        font->glattr.texel = texture_png_create(&font->png, FILTER_NEAREST, 0);
-        ret = glIsTexture(font->glattr.texel);
+        font->texel = texture_png_create(&font->png, FILTER_NEAREST, 0);
+        ret = glIsTexture(font->texel);
         if (ret == GL_FALSE) {
                 pr_err_func("failed to create font texture\n");
-                goto free_png;
+                goto free_png_bg;
+        }
+
+        font->texel_bg = texture_png_create(&font->png_bg, FILTER_NEAREST, 0);
+        ret = glIsTexture(font->texel_bg);
+        if (ret == GL_FALSE) {
+                pr_err_func("failed to create font texture\n");
+                goto free_texel;
         }
 
         font->glattr.program = program_create(TEXT_SHADER("text_vertex"),
@@ -812,7 +834,7 @@ int text_render_init(void)
         ret = glIsProgram(font->glattr.program);
         if (ret == GL_FALSE) {
                 pr_err_func("failed to load font shaders\n");
-                goto free_texel;
+                goto free_texel_bg;
         }
 
         font->glattr.sampler = glGetUniformLocation(font->glattr.program, "sampler");
@@ -820,8 +842,14 @@ int text_render_init(void)
 
         return 0;
 
+free_texel_bg:
+        texture_delete(&font->texel_bg);
+
 free_texel:
-        texture_delete(&font->glattr.texel);
+        texture_delete(&font->texel);
+
+free_png_bg:
+        image_png_free(&font->png_bg);
 
 free_png:
         image_png_free(&font->png);
@@ -835,9 +863,14 @@ int text_render_deinit(void)
         gl_attr *glattr = &font->glattr;
 
         image_png_free(&font->png);
+        image_png_free(&font->png_bg);
 
-        if (glIsTexture(font->glattr.texel) != GL_FALSE) {
-                texture_delete(&font->glattr.texel);
+        if (glIsTexture(font->texel) != GL_FALSE) {
+                texture_delete(&font->texel);
+        }
+
+        if (glIsTexture(font->texel_bg) != GL_FALSE) {
+                texture_delete(&font->texel_bg);
         }
 
         if (glIsProgram(font->glattr.program) != GL_FALSE) {
