@@ -875,6 +875,190 @@ int text_render_deinit(void)
 }
 
 /**
+ * Crosshair Render
+ */
+
+typedef struct crosshair {
+        const char      *texel_file;
+        int             height;
+        int             width;
+        image_png       png;
+        gl_attr         glattr;
+} crosshair;
+
+static crosshair crosshair_def = {
+        .texel_file = TEXTURE_PNG("crosshair"),
+};
+
+static crosshair *g_crosshair = &crosshair_def;
+
+void crosshair_prepare(crosshair *ch, float scale, int fb_w, int fb_h, seqlist *vertices, seqlist *uvs)
+{
+        enum corner {
+                UL = V1,
+                UR = V2,
+                LL = V3,
+                LR = V4,
+        };
+
+        enum uv_attr {
+                U = 0,
+                V,
+        };
+
+        vec2 origin = { (float)fb_w / 2, (float)fb_h / 2 };
+        float width_2 = ((float)ch->width / 2) * scale;
+        float height_2 = ((float)ch->height / 2) * scale;
+
+        vec2 vertex[VERTICES_QUAD];
+
+        vertex[UL][X] = origin[X] - width_2;
+        vertex[UL][Y] = origin[Y] + height_2;
+
+        vertex[UR][X] = origin[X] + width_2;
+        vertex[UR][Y] = origin[Y] + height_2;
+
+        vertex[LL][X] = origin[X] - width_2;
+        vertex[LL][Y] = origin[Y] - height_2;
+
+        vertex[LR][X] = origin[X] + width_2;
+        vertex[LR][Y] = origin[Y] - height_2;
+
+        seqlist_append(vertices, vertex[UL]);
+        seqlist_append(vertices, vertex[UR]);
+        seqlist_append(vertices, vertex[LL]);
+
+        seqlist_append(vertices, vertex[UR]);
+        seqlist_append(vertices, vertex[LR]);
+        seqlist_append(vertices, vertex[LL]);
+
+        vec2 uv[VERTICES_QUAD];
+
+        uv[UL][U] = 0.0f; uv[UL][V] = 1.0f;
+        uv[UR][U] = 1.0f; uv[UR][V] = 1.0f;
+        uv[LL][U] = 0.0f; uv[LL][V] = 0.0f;
+        uv[LR][U] = 1.0f; uv[LR][V] = 0.0f;
+
+        seqlist_append(uvs, uv[UL]);
+        seqlist_append(uvs, uv[UR]);
+        seqlist_append(uvs, uv[LL]);
+
+        seqlist_append(uvs, uv[UR]);
+        seqlist_append(uvs, uv[LR]);
+        seqlist_append(uvs, uv[LL]);
+}
+
+int crosshair_draw(float scale, int fb_width, int fb_height)
+{
+        float screen_size[2] = { fb_width, fb_height };
+        crosshair *ch = g_crosshair;
+        gl_attr *glattr = &ch->glattr;
+        seqlist vertices;
+        seqlist uvs;
+
+        seqlist_init(&vertices, sizeof(vec2), 6);
+        seqlist_init(&uvs, sizeof(vec2), 6);
+
+        crosshair_prepare(ch, scale, fb_width, fb_height, &vertices, &uvs);
+
+        glattr->vertex = buffer_create(vertices.data, vertices.element_size * vertices.count_utilized);
+        glattr->vertex_uv = buffer_create(uvs.data, uvs.element_size * uvs.count_utilized);
+
+        glUseProgram(glattr->program);
+
+        glUniform2fv(glattr->uniform_1, 1, &screen_size[0]);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, glattr->texel);
+        glUniform1i(glattr->sampler, 0);
+
+        glEnableVertexAttribArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, glattr->vertex);
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, (void *)0);
+
+        glEnableVertexAttribArray(1);
+        glBindBuffer(GL_ARRAY_BUFFER, glattr->vertex_uv);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void *)0);
+
+        glDrawArrays(GL_TRIANGLES, 0, (GLsizei)vertices.count_utilized);
+
+        glDisableVertexAttribArray(0);
+        glDisableVertexAttribArray(1);
+
+        buffer_delete(&glattr->vertex);
+        buffer_delete(&glattr->vertex_uv);
+
+        seqlist_deinit(&vertices);
+        seqlist_deinit(&uvs);
+
+        return 0;
+}
+
+int crosshair_init(void)
+{
+        crosshair *ch = g_crosshair;
+        gl_attr *glattr = &ch->glattr;
+        int ret;
+
+        ret = image_png32_load(&ch->png, ch->texel_file);
+        if (ret)
+                return ret;
+
+        ch->width = ch->png.width;
+        ch->height = ch->png.height;
+
+        gl_attr_init(glattr);
+
+        glattr->texel = texture_png_create(&ch->png, FILTER_NEAREST, 0);
+        ret = glIsTexture(glattr->texel);
+        if (ret == GL_FALSE) {
+                pr_err_func("failed to create crosshair texture\n");
+                goto free_png;
+        }
+
+        glattr->program = program_create(SHADER_FILE("crosshair_vertex"),
+                                         SHADER_FILE("crosshair_fragment"));
+        ret = glIsProgram(glattr->program);
+        if (ret == GL_FALSE) {
+                pr_err_func("failed to load crosshair shader\n");
+                goto free_texel;
+        }
+
+        glattr->sampler = glGetUniformLocation(glattr->program, "sampler");
+        glattr->uniform_1 = glGetUniformLocation(glattr->program, "screen_size");
+
+        return 0;
+
+free_texel:
+        texture_delete(&glattr->texel);
+
+free_png:
+        image_png_free(&ch->png);
+
+        return ret;
+}
+
+int crosshair_deinit(void)
+{
+        crosshair *ch = g_crosshair;
+        gl_attr *glattr = &ch->glattr;
+
+        image_png_free(&ch->png);
+
+        if (glIsTexture(glattr->texel) != GL_FALSE) {
+                texture_delete(&glattr->texel);
+        }
+
+        if (glIsTexture(glattr->program) != GL_FALSE) {
+                program_delete(&glattr->program);
+        }
+
+        gl_attr_buffer_delete(glattr);
+
+        return 0;
+}
+
+/**
  * FPS Meter
  */
 
