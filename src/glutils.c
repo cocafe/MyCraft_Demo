@@ -607,9 +607,6 @@ int gl_vbo_is_empty(gl_vbo *vbo)
  * String Rendering
  */
 
-#define TEXTURE_FONT(file)            (RESOURCES_TEXTURE_PATH file SUFFIX_PNG)
-#define TEXT_SHADER(file)             (RESOURCES_SHADER_PATH file SUFFIX_GLSL)
-
 typedef struct text_font {
         const char      *texel_file;
         const char      *texel_file_bg;
@@ -627,8 +624,8 @@ typedef struct text_font {
 } text_font;
 
 static text_font font_ubuntu = {
-        .texel_file     = TEXTURE_FONT("font_ubuntu"),
-        .texel_file_bg  = TEXTURE_FONT("font_ubuntu_bg"),
+        .texel_file     = TEXTURE_PNG("font_ubuntu"),
+        .texel_file_bg  = TEXTURE_PNG("font_ubuntu_bg"),
         .texel_width    = 512,
         .texel_height   = 512,
         .cell_width     = 32,
@@ -821,8 +818,8 @@ int text_render_init(void)
                 goto free_texel;
         }
 
-        glattr->program = program_create(TEXT_SHADER("text_vertex"),
-                                           TEXT_SHADER("text_fragment"));
+        glattr->program = program_create(SHADER_FILE("text_vertex"),
+                                           SHADER_FILE("text_fragment"));
         ret = glIsProgram(glattr->program);
         if (ret == GL_FALSE) {
                 pr_err_func("failed to load font shaders\n");
