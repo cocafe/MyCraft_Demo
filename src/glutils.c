@@ -650,6 +650,8 @@ void text_string_prepare(text_font *font, const char *str, int x, int y,
                          float scale, int fb_w, int fb_h,
                          seqlist *vertices, seqlist *uvs)
 {
+        UNUSED_PARAM(fb_w);
+
         enum corner {
                 UL = V1,
                 UR = V2,
@@ -689,15 +691,11 @@ void text_string_prepare(text_font *font, const char *str, int x, int y,
         float uv_h = (float)char_h / font->cell_height;
         float uv_w = (float)char_w / font->cell_width;
 
-        // Flip (0, 0) from lower-left to upper-left
-        UNUSED_PARAM(fb_w);
-        y = fb_h - font->cell_height - y;
-
         for (size_t i = 0; i < strlen(str); ++i) {
                 vec2 vertex[VERTICES_QUAD];
 
                 float x1 = x + (i * char_w) * scale;
-                float y1 = y;
+                float y1 = fb_h - (char_h * scale) - y; // Move (0, 0) from frame LL to UL
                 float x2 = x1 + char_w * scale;
                 float y2 = y1 + char_h * scale;
 
