@@ -40,6 +40,9 @@
 #define RESOURCES_SHADER_PATH           RESOURCES_PATH "shader/"
 #define RESOURCES_TEXTURE_PATH          RESOURCES_PATH "texture/"
 
+#define SHADER_FILE(file)               (RESOURCES_SHADER_PATH file SUFFIX_GLSL)
+#define TEXTURE_PNG(file)               (RESOURCES_TEXTURE_PATH file SUFFIX_PNG)
+
 /**
  * File
  */
