@@ -652,6 +652,11 @@ void text_string_prepare(text_font *font, const char *str, int x, int y,
                 LR = V4,
         };
 
+        enum uv_attr {
+                U = 0,
+                V,
+        };
+
         /**
          *
          * (x1, y2) ----- (x2, y2)    ___
@@ -715,10 +720,10 @@ void text_string_prepare(text_font *font, const char *str, int x, int y,
                 x2 = uv_x + uv_x_div * uv_w;
                 y2 = uv_y;
 
-                uv[UL][X] = x1; uv[UL][Y] = y2;
-                uv[UR][X] = x2; uv[UR][Y] = y2;
-                uv[LL][X] = x1; uv[LL][Y] = y1;
-                uv[LR][X] = x2; uv[LR][Y] = y1;
+                uv[UL][U] = x1; uv[UL][V] = y2;
+                uv[UR][U] = x2; uv[UR][V] = y2;
+                uv[LL][U] = x1; uv[LL][V] = y1;
+                uv[LR][U] = x2; uv[LR][V] = y1;
 
                 seqlist_append(uvs, uv[UL]);
                 seqlist_append(uvs, uv[UR]);
