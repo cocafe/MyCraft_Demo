@@ -4,6 +4,7 @@
 #include <string.h>
 #include <memory.h>
 #include <errno.h>
+#include <pthread.h>
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -81,15 +82,21 @@ int vertex_array_delete(GLuint *vertex_array)
         return 0;
 }
 
+static inline void buffer_fill(const GLuint *buffer, void *data, GLsizeiptr size)
+{
+        glBindBuffer(GL_ARRAY_BUFFER, *buffer);
+        glBufferData(GL_ARRAY_BUFFER, size, data, GL_STATIC_DRAW);
+
+        glBindBuffer(GL_ARRAY_BUFFER, GL_BUFFER_NONE);
+}
+
 GLuint buffer_create(void *data, GLsizeiptr size)
 {
         GLuint buffer;
 
         glGenBuffers(1, &buffer);
-        glBindBuffer(GL_ARRAY_BUFFER, buffer);
-        glBufferData(GL_ARRAY_BUFFER, size, data, GL_STATIC_DRAW);
 
-        glBindBuffer(GL_ARRAY_BUFFER, GL_BUFFER_NONE);
+        buffer_fill(&buffer, data, size);
 
         return buffer;
 }
@@ -599,6 +606,89 @@ int gl_vbo_is_empty(gl_vbo *vbo)
         if (seqlist_is_empty(&vbo->indices) &&
             seqlist_is_empty(&vbo->vbo_attrs))
                 return 1;
+
+        return 0;
+}
+
+/**
+ * Space Line Rendering
+ */
+
+typedef struct line_render {
+        gl_attr                 glattr;
+        pthread_spinlock_t      spinlock;
+} line_render;
+
+static line_render g_line_render;
+
+int line_draw(float *vertices, size_t count, vec4 color, GLenum color_op, mat4 mat_transform)
+{
+        line_render *lr = &g_line_render;
+        gl_attr *glattr = &lr->glattr;
+
+        pthread_spin_lock(&lr->spinlock);
+
+        glattr->vertex = buffer_create(vertices, sizeof(vec3) * count);
+
+        glUseProgram(GL_PROGRAM_NONE);
+
+        glUseProgram(glattr->program);
+
+        glEnable(GL_COLOR_LOGIC_OP);
+        glLogicOp(color_op);
+
+        glUniform4fv(glattr->uniform_1, 1, &color[0]);
+        glUniformMatrix4fv(glattr->mat_transform, 1, GL_FALSE, &mat_transform[0][0]);
+
+        glEnableVertexAttribArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, glattr->vertex);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
+
+        glDrawArrays(GL_LINES, 0, (GLsizei)count);
+
+        glDisableVertexAttribArray(0);
+
+        glDisable(GL_COLOR_LOGIC_OP);
+
+        buffer_delete(&glattr->vertex);
+
+        pthread_spin_unlock(&lr->spinlock);
+
+        return 0;
+}
+
+int line_render_deinit(void)
+{
+        line_render *lr = &g_line_render;
+        gl_attr *glattr = &lr->glattr;
+
+        pthread_spin_destroy(&lr->spinlock);
+
+        program_delete(&glattr->program);
+
+        gl_attr_buffer_delete(glattr);
+
+        return 0;
+}
+
+int line_render_init(void)
+{
+        line_render *lr = &g_line_render;
+        gl_attr *glattr = &lr->glattr;
+        int ret;
+
+        pthread_spin_init(&lr->spinlock, PTHREAD_PROCESS_PRIVATE);
+
+        glattr->program = program_create(SHADER_FILE("line_vertex"),
+                                         SHADER_FILE("line_fragment"));
+        ret = glIsProgram(glattr->program);
+        if (!ret) {
+                pr_err_func("failed to load line shaders\n");
+                return ret;
+        }
+
+        glattr->mat_transform = glGetUniformLocation(glattr->program, "mat_transform");
+        glattr->uniform_1 = glGetUniformLocation(glattr->program, "line_color");
 
         return 0;
 }
