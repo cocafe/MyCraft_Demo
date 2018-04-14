@@ -1,6 +1,8 @@
 #ifndef MYCRAFT_DEMO_CHUNKS_H
 #define MYCRAFT_DEMO_CHUNKS_H
 
+#include <pthread.h>
+
 #include "block.h"
 #include "model.h"
 #include "utils.h"

@@ -1,6 +1,7 @@
 #ifndef MYCRAFT_DEMO_BLOCK_H
 #define MYCRAFT_DEMO_BLOCK_H
 
+#include "utils.h"
 #include "glutils.h"
 #include "texel.h"
 #include "../lib/png_loader.h"
