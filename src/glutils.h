@@ -83,9 +83,9 @@ int text_string_draw(const char *str, int x, int y, float scale, int background,
 int text_render_init(void);
 int text_render_deinit(void);
 
-int crosshair_draw(float scale, int fb_width, int fb_height);
-int crosshair_init(void);
-int crosshair_deinit(void);
+int crosshair_textured_draw(float scale, int fb_width, int fb_height);
+int crosshair_textured_init(void);
+int crosshair_textured_deinit(void);
 
 /**
  * VBOs

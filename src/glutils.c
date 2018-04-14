@@ -818,8 +818,8 @@ int text_render_init(void)
                 goto free_texel;
         }
 
-        glattr->program = program_create(SHADER_FILE("text_vertex"),
-                                           SHADER_FILE("text_fragment"));
+        glattr->program = program_create(SHADER_FILE("2d_polygon_vertex"),
+                                           SHADER_FILE("2d_polygon_fragment"));
         ret = glIsProgram(glattr->program);
         if (ret == GL_FALSE) {
                 pr_err_func("failed to load font shaders\n");
@@ -945,7 +945,7 @@ void crosshair_prepare(crosshair *ch, float scale, int fb_w, int fb_h, seqlist *
         seqlist_append(uvs, uv[LL]);
 }
 
-int crosshair_draw(float scale, int fb_width, int fb_height)
+int crosshair_textured_draw(float scale, int fb_width, int fb_height)
 {
         float screen_size[2] = { fb_width, fb_height };
         crosshair *ch = g_crosshair;
@@ -991,7 +991,7 @@ int crosshair_draw(float scale, int fb_width, int fb_height)
         return 0;
 }
 
-int crosshair_init(void)
+int crosshair_textured_init(void)
 {
         crosshair *ch = g_crosshair;
         gl_attr *glattr = &ch->glattr;
@@ -1013,8 +1013,8 @@ int crosshair_init(void)
                 goto free_png;
         }
 
-        glattr->program = program_create(SHADER_FILE("crosshair_vertex"),
-                                         SHADER_FILE("crosshair_fragment"));
+        glattr->program = program_create(SHADER_FILE("2d_polygon_vertex"),
+                                         SHADER_FILE("2d_polygon_fragment"));
         ret = glIsProgram(glattr->program);
         if (ret == GL_FALSE) {
                 pr_err_func("failed to load crosshair shader\n");
@@ -1035,7 +1035,7 @@ free_png:
         return ret;
 }
 
-int crosshair_deinit(void)
+int crosshair_textured_deinit(void)
 {
         crosshair *ch = g_crosshair;
         gl_attr *glattr = &ch->glattr;
