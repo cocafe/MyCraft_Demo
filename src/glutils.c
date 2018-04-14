@@ -726,9 +726,9 @@ static text_font font_ubuntu = {
 
 static text_font *g_font = &font_ubuntu;
 
-void text_string_prepare(text_font *font, const char *str, int x, int y,
-                         float scale, int fb_w, int fb_h,
-                         seqlist *vertices, seqlist *uvs)
+void string_vertex_generate(text_font *font, const char *str,
+                            int x, int y, float scale, int fb_w, int fb_h,
+                            seqlist *vertices, seqlist *uvs)
 {
         UNUSED_PARAM(fb_w);
 
@@ -836,17 +836,16 @@ int text_string_draw(const char *str, int x, int y, float scale, int background,
         seqlist_init(&vertices, sizeof(vec2), 32);
         seqlist_init(&uvs, sizeof(vec2), 32);
 
-        text_string_prepare(font, str, x, y, scale, fb_width, fb_height, &vertices, &uvs);
+        string_vertex_generate(font, str, x, y, scale, fb_width, fb_height,
+                               &vertices, &uvs);
 
         if (background)
                 glattr->texel = font->texel_bg;
         else
                 glattr->texel = font->texel;
 
-        glattr->vertex = buffer_create(vertices.data,
-                                       vertices.element_size * vertices.count_utilized);
-        glattr->vertex_uv = buffer_create(uvs.data,
-                                          uvs.element_size * uvs.count_utilized);
+        glattr->vertex = buffer_create(vertices.data, vertices.element_size * vertices.count_utilized);
+        glattr->vertex_uv = buffer_create(uvs.data, uvs.element_size * uvs.count_utilized);
 
         glUseProgram(glattr->program);
 
@@ -979,7 +978,8 @@ static crosshair crosshair_def = {
 
 static crosshair *g_crosshair = &crosshair_def;
 
-void crosshair_prepare(crosshair *ch, float scale, int fb_w, int fb_h, seqlist *vertices, seqlist *uvs)
+void crosshair_vertex_generate(crosshair *ch, float scale, int fb_w, int fb_h,
+                               seqlist *vertices, seqlist *uvs)
 {
         enum corner {
                 UL = V1,
@@ -1046,7 +1046,8 @@ int crosshair_textured_draw(float scale, int fb_width, int fb_height)
         seqlist_init(&vertices, sizeof(vec2), 6);
         seqlist_init(&uvs, sizeof(vec2), 6);
 
-        crosshair_prepare(ch, scale, fb_width, fb_height, &vertices, &uvs);
+        crosshair_vertex_generate(ch, scale, fb_width, fb_height,
+                                  &vertices, &uvs);
 
         glattr->vertex = buffer_create(vertices.data, vertices.element_size * vertices.count_utilized);
         glattr->vertex_uv = buffer_create(uvs.data, uvs.element_size * uvs.count_utilized);
