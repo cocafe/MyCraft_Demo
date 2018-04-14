@@ -58,9 +58,12 @@
 /**
  * Vertex
  */
+#define VERTICES_LINE                   (2)
 #define VERTICES_TRIANGLE               (3)
 #define VERTICES_QUAD                   (4)
+#define VERTICES_CUBE                   (8)
 #define VERTICES_TRIANGULATE_QUAD       (2 * VERTICES_TRIANGLE)
+#define VERTICES_TRIANGULATE_CUBE       (CUBE_QUAD_FACES * VERTICES_TRIANGULATE_QUAD)
 
 enum vec_attr {
         X = 0,

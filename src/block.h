@@ -7,8 +7,6 @@
 
 #define BLOCK_EDGE_LEN_GLUNIT           (1U)
 
-#define CUBE_QUAD_FACES                 (6)
-
 #define BLOCK_SHADER_FILE(file)         (RESOURCES_SHADER_PATH file SUFFIX_GLSL)
 
 #define BLOCK_TEXTURE_PATH              RESOURCES_TEXTURE_PATH "block/"
