@@ -30,4 +30,6 @@ int block_model_generate(block_model *model, block_attr *blk_attr);
 int block_model_init(block_model *model, vec3 origin_gl);
 int block_model_deinit(block_model *model);
 
+int block_wireframe_draw(ivec3 origin_l, vec4 color, int invert_color, mat4 mat_transform);
+
 #endif //MYCRAFT_DEMO_MODEL_H

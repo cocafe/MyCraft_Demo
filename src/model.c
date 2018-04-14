@@ -11,6 +11,7 @@
 #include "utils.h"
 #include "glutils.h"
 #include "model.h"
+#include "chunks.h"
 
 enum texel_corner {
         LOWER_LEFT = 0,
@@ -339,6 +340,80 @@ int block_model_deinit(block_model *model)
                 block_face *f = &(model->faces[i]);
                 block_model_face_deinit(f);
         }
+
+        return 0;
+}
+
+static inline void block_wireframe_line(line_vec3 line, vec3 a, vec3 b)
+{
+        glm_vec_copy(a, line[V1]);
+        glm_vec_copy(b, line[V2]);
+}
+
+void block_wireframe_generate(line_vec3 *line, float scale, const vec3 origin_gl)
+{
+        vec3 cube_vertices[VERTICES_CUBE];
+        float l_2 = BLOCK_EDGE_LEN_GLUNIT / 2.0f * scale;
+
+        ivec2 cube_line_pairs[LINES_CUBE] = {
+                { V1, V2 }, { V2, V4 }, { V4, V3 }, { V3, V1 },
+                { V5, V6 }, { V6, V8 }, { V8, V7 }, { V7, V5 },
+                { V1, V5 }, { V2, V6 }, { V3, V7 }, { V4, V8 },
+        };
+
+        // Top face
+        cube_vertices[V1][X] = origin_gl[X] - l_2;
+        cube_vertices[V1][Y] = origin_gl[Y] + l_2;
+        cube_vertices[V1][Z] = origin_gl[Z] - l_2;
+
+        cube_vertices[V2][X] = origin_gl[X] + l_2;
+        cube_vertices[V2][Y] = origin_gl[Y] + l_2;
+        cube_vertices[V2][Z] = origin_gl[Z] - l_2;
+
+        cube_vertices[V3][X] = origin_gl[X] - l_2;
+        cube_vertices[V3][Y] = origin_gl[Y] + l_2;
+        cube_vertices[V3][Z] = origin_gl[Z] + l_2;
+
+        cube_vertices[V4][X] = origin_gl[X] + l_2;
+        cube_vertices[V4][Y] = origin_gl[Y] + l_2;
+        cube_vertices[V4][Z] = origin_gl[Z] + l_2;
+
+        // Bottom face
+        cube_vertices[V5][X] = origin_gl[X] - l_2;
+        cube_vertices[V5][Y] = origin_gl[Y] - l_2;
+        cube_vertices[V5][Z] = origin_gl[Z] - l_2;
+
+        cube_vertices[V6][X] = origin_gl[X] + l_2;
+        cube_vertices[V6][Y] = origin_gl[Y] - l_2;
+        cube_vertices[V6][Z] = origin_gl[Z] - l_2;
+
+        cube_vertices[V7][X] = origin_gl[X] - l_2;
+        cube_vertices[V7][Y] = origin_gl[Y] - l_2;
+        cube_vertices[V7][Z] = origin_gl[Z] + l_2;
+
+        cube_vertices[V8][X] = origin_gl[X] + l_2;
+        cube_vertices[V8][Y] = origin_gl[Y] - l_2;
+        cube_vertices[V8][Z] = origin_gl[Z] + l_2;
+
+        for (int i = 0; i < LINES_CUBE; ++i) {
+                block_wireframe_line(line[i],
+                                     cube_vertices[cube_line_pairs[i][0]],
+                                     cube_vertices[cube_line_pairs[i][1]]);
+        }
+}
+
+int block_wireframe_draw(ivec3 origin_l, vec4 color, int invert_color, mat4 mat_transform)
+{
+        float wireframe_scale = 1.005f; // To make a little outside
+        line_vec3 lines[LINES_CUBE];
+        vec3 origin_gl = { 0 };
+
+        point_local_to_gl(origin_l, BLOCK_EDGE_LEN_GLUNIT, origin_gl);
+
+        block_wireframe_generate(lines, wireframe_scale, origin_gl);
+
+        line_draw(&lines[0][0][0], VERTICES_LINE * LINES_CUBE,
+                  color, invert_color ? GL_INVERT : GL_COPY, mat_transform);
 
         return 0;
 }
