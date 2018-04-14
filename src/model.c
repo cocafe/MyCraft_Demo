@@ -30,6 +30,7 @@ typedef enum quad_vertices {
         LL1 = V6,
 } quad_vertices;
 
+// Normalized, not rotated
 static vec3 cube_normals[] = {
         [CUBE_FRONT]    = {  0.0f,  0.0f,  1.0f },
         [CUBE_BACK]     = {  0.0f,  0.0f, -1.0f },
@@ -201,8 +202,8 @@ static void block_model_face_vertex(block_face *face, block_attr *blk_attr,
         memcpy(v[LL1].position, v[LL].position, sizeof(vec3));
 }
 
-static void block_model_face_uv(block_face *face, block_attr *blk_attr,
-                                int face_idx)
+static void block_model_face_vertex_uv(block_face *face, block_attr *blk_attr,
+                                       int face_idx)
 {
         int rotation = blk_attr->texel.texel_rotation[face_idx];
         int rotated_seq[][4] = {
@@ -262,6 +263,13 @@ void block_model_face_vertex_normal(block_face *face, const vec3 origin_gl)
         }
 }
 
+static inline void block_model_face_normal(block_face *face, int idx)
+{
+        face->normal[X] = cube_normals[idx][X];
+        face->normal[Y] = cube_normals[idx][Y];
+        face->normal[Z] = cube_normals[idx][Z];
+}
+
 /**
  * block_model_face_generate() - generate single block face vertices
  *
@@ -285,7 +293,9 @@ int block_model_face_generate(block_face *f, block_model *m,
 
         block_model_face_vertex(f, attr, m->origin_gl, idx);
         block_model_face_vertex_normal(f, m->origin_gl);
-        block_model_face_uv(f, attr, idx);
+        block_model_face_vertex_uv(f, attr, idx);
+
+        block_model_face_normal(f, idx);
 
         return 0;
 }

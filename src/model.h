@@ -12,6 +12,7 @@
 
 typedef struct block_face {
         vertex_attr     *vertices;
+        vec3            normal;
         int             visible;
 } block_face;
 
