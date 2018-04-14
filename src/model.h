@@ -7,8 +7,6 @@
 #include "glutils.h"
 #include "block.h"
 
-#define CUBE_QUAD_FACES                 (6)
-
 typedef struct block_face {
         vertex_attr     *vertices;
         vec3            normal;

@@ -98,6 +98,23 @@ typedef float *pvec2;
 typedef float *pvec3;
 typedef float *pvec4;
 
+/**
+ * Line
+ */
+
+#define LINES_TRIANGLE                  (3)
+#define LINES_QUAD                      (4)
+#define LINES_CUBE                      (12)
+
+typedef vec2 line_vec2[VERTICES_LINE];
+typedef vec3 line_vec3[VERTICES_LINE];
+
+/**
+ * Face
+ */
+
+#define CUBE_QUAD_FACES                 (6)
+
 void ivec3_copy(const ivec3 src, ivec3 dest);
 
 /**
