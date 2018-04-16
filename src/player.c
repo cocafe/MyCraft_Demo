@@ -39,6 +39,8 @@ static player default_player = {
                 .width  = PLAYER_WIDTH,
         },
 
+        .state = FLYING,
+
         .speed_sets = {
                 .fly = 10.0f,
                 .fly_noclip = 1,
