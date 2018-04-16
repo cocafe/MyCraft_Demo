@@ -28,6 +28,13 @@ float ivec3_distance(ivec3 v1, ivec3 v2)
                      glm_pow2(v2[2] - v1[2]));
 }
 
+extern inline void vec3_round_ivec3(const vec3 src, ivec3 dst)
+{
+        dst[0] = (int)(roundf(src[0]));
+        dst[1] = (int)(roundf(src[1]));
+        dst[2] = (int)(roundf(src[2]));
+}
+
 int vec2_equal(const vec2 a, const vec2 b)
 {
         float epsilon = FLT_EPSILON;
