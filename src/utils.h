@@ -65,12 +65,15 @@
 #define VERTICES_TRIANGULATE_QUAD       (2 * VERTICES_TRIANGLE)
 #define VERTICES_TRIANGULATE_CUBE       (CUBE_QUAD_FACES * VERTICES_TRIANGULATE_QUAD)
 
-enum vec_attr {
+enum vec3_attr {
         X = 0,
         Y,
         Z,
-        W,
-        NR_VEC_IDX,
+        NR_VEC3_ATTR,
+};
+
+enum vec4_attr {
+        W = 3,
 };
 
 enum vertex_idx {
