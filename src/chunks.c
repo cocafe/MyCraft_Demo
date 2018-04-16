@@ -195,23 +195,18 @@ int chunk_deinit(chunk *c)
         return 0;
 }
 
-enum {
-        L_WAIT = 0,
-        L_NOWAIT,
-};
-
-static inline int chunk_state_get(chunk *c, int flag)
+static inline int chunk_state_get(chunk *c, int wait)
 {
         int state = CHUNK_UNKNOWN;
 
         if (!c)
                 return state;
 
-        if (flag == L_NOWAIT) {
+        if (wait == L_WAIT) {
+                pthread_rwlock_rdlock(&c->rwlock);
+        } else {
                 if (pthread_rwlock_tryrdlock(&c->rwlock))
                         return state;
-        } else {
-                pthread_rwlock_rdlock(&c->rwlock);
         }
 
         state = c->state;
@@ -270,12 +265,17 @@ static inline linklist_node *chunk_get_block_node(chunk *c, ivec3 origin_b)
         return ret;
 }
 
-block *chunk_get_block(chunk *c, ivec3 origin_block)
+block *chunk_get_block(chunk *c, ivec3 origin_block, int wait)
 {
         linklist_node *node;
         block *ret = NULL;
 
-        pthread_rwlock_rdlock(&c->rwlock);
+        if (wait == L_WAIT) {
+                pthread_rwlock_rdlock(&c->rwlock);
+        } else {
+                if (pthread_rwlock_tryrdlock(&c->rwlock))
+                        return ret;
+        }
 
         if (linklist_is_empty(c->blocks))
                 goto out;
@@ -373,7 +373,7 @@ out:
         return ret;
 }
 
-block *world_get_block(world *w, ivec3 origin_block)
+block *world_get_block(world *w, ivec3 origin_block, int wait)
 {
         ivec3 origin_chunk = { 0 };
         chunk *c;
@@ -388,7 +388,7 @@ block *world_get_block(world *w, ivec3 origin_block)
         if (!c)
                 return NULL;
 
-        b = chunk_get_block(c, origin_block);
+        b = chunk_get_block(c, origin_block, wait);
 
         return b;
 }
@@ -538,7 +538,7 @@ int chunk_cull_blocks(chunk *c, world *w)
                         block *b_near;
 
                         block_near_origin_get(b, i, o_near);
-                        b_near = world_get_block(w, o_near);
+                        b_near = world_get_block(w, o_near, L_WAIT);
 
                         if (!b_near) {
                                 if (!f->visible) {

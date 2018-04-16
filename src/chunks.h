@@ -71,7 +71,7 @@ int block_in_chunk(ivec3 origin_block, int chunk_length, ivec3 origin_chunk);
 int chunk_init(chunk *c, ivec3 origin_chunk);
 int chunk_deinit(chunk *c);
 
-block *chunk_get_block(chunk *c, ivec3 origin_block);
+block *chunk_get_block(chunk *c, ivec3 origin_block, int wait);
 block *chunk_add_block(chunk *c, block *b);
 int chunk_del_block(chunk *c, ivec3 origin_block);
 int chunk_cull_blocks(chunk *c, world *w);
@@ -81,7 +81,7 @@ chunk *world_get_chunk(world *w, ivec3 origin_chunk);
 
 int world_add_block(world *w, block *b);
 int world_del_block(world *w, ivec3 origin_block);
-block *world_get_block(world *w, ivec3 origin_block);
+block *world_get_block(world *w, ivec3 origin_block, int wait);
 
 int world_update_chunks(world *w);
 int world_draw_chunks(world *w, mat4 mat_transform);

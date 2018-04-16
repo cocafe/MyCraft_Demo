@@ -207,7 +207,7 @@ int collision_test_block_point(world *w, const vec3 point_gl)
         if (!point_to_cube(point_gl, BLOCK_EDGE_LEN_GLUNIT, origin_b))
                 return 0;
 
-        if (world_get_block(w, origin_b) != NULL)
+        if (world_get_block(w, origin_b, L_WAIT) != NULL)
                 return 1;
 
         return 0;

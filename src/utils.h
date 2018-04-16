@@ -169,6 +169,13 @@ int buf_free(char **buf);
 /**
  * Misc
  */
+
+// pthread lock wait flag
+enum {
+        L_NOWAIT = 0,
+        L_WAIT,
+};
+
 long get_cpu_count(void);
 void image_vertical_flip(uint8_t *data, uint32_t width, uint32_t height);
 
