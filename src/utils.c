@@ -14,11 +14,11 @@
 #include "debug.h"
 #include "utils.h"
 
-extern inline void ivec3_copy(const ivec3 src, ivec3 dest)
+extern inline void ivec3_copy(const ivec3 src, ivec3 dst)
 {
-        dest[0] = src[0];
-        dest[1] = src[1];
-        dest[2] = src[2];
+        dst[0] = src[0];
+        dst[1] = src[1];
+        dst[2] = src[2];
 }
 
 float ivec3_distance(ivec3 v1, ivec3 v2)
