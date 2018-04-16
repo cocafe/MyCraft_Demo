@@ -21,6 +21,13 @@ extern inline void ivec3_copy(const ivec3 src, ivec3 dest)
         dest[2] = src[2];
 }
 
+float ivec3_distance(ivec3 v1, ivec3 v2)
+{
+        return sqrtf(glm_pow2(v2[0] - v1[0]) +
+                     glm_pow2(v2[1] - v1[1]) +
+                     glm_pow2(v2[2] - v1[2]));
+}
+
 int vec2_equal(const vec2 a, const vec2 b)
 {
         float epsilon = FLT_EPSILON;

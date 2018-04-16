@@ -115,7 +115,12 @@ typedef vec3 line_vec3[VERTICES_LINE];
 
 #define CUBE_QUAD_FACES                 (6)
 
+/**
+ * Vector Operations
+ */
+
 void ivec3_copy(const ivec3 src, ivec3 dest);
+float ivec3_distance(ivec3 v1, ivec3 v2);
 
 /**
  * Equality Test
