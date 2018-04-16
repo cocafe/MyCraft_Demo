@@ -522,13 +522,13 @@ void player_fly(player *p, world *w, GLFWwindow *window)
 
         // Forward
         if (glfwKeyPressed(window, GLFW_KEY_W)) {
-                __player_move(p, w, vec_t, 1, god, NULL);
+                __player_move(p, w, vec_t, god, god, NULL);
         }
 
         // Backward
         if (glfwKeyPressed(window, GLFW_KEY_S)) {
                 glm_vec_inv(vec_t);
-                __player_move(p, w, vec_t, 1, god, NULL);
+                __player_move(p, w, vec_t, god, god, NULL);
         }
 
         // Vector for left/right
@@ -538,12 +538,12 @@ void player_fly(player *p, world *w, GLFWwindow *window)
         // Left
         if (glfwKeyPressed(window, GLFW_KEY_A)) {
                 glm_vec_inv(vec_t);
-                __player_move(p, w, vec_t, 1, god, NULL);
+                __player_move(p, w, vec_t, 0, god, NULL);
         }
 
         // Right
         if (glfwKeyPressed(window, GLFW_KEY_D)) {
-                __player_move(p, w, vec_t, 1, god, NULL);
+                __player_move(p, w, vec_t, 0, god, NULL);
         }
 
         // Vector for up/down
