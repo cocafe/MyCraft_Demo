@@ -41,7 +41,7 @@ static player default_player = {
 
         .state = FLYING,
 
-        .speed_sets = {
+        .attr = {
                 .fly = 10.0f,
                 .fly_noclip = 1,
 
@@ -364,7 +364,7 @@ void player_stand(player *p)
 
 void player_move(player *p, world *w, GLFWwindow *window)
 {
-        player_speed_sets *sets = &p->speed_sets;
+        player_attr *attr = &p->attr;
         player_speed *speed = &p->speed;
         timestamp *ts = &player_ts;
         camera *cam = &p->cam;
@@ -375,7 +375,7 @@ void player_move(player *p, world *w, GLFWwindow *window)
 
         if (p->state == INAIR) {
                 if (glfwKeyReleased(window, GLFW_KEY_LEFT_SHIFT)) {
-                        p->speed.horizontal = sets->air;
+                        p->speed.horizontal = attr->air;
                 }
         }
 
@@ -385,13 +385,13 @@ void player_move(player *p, world *w, GLFWwindow *window)
                         return;
                 }
 
-                speed->horizontal = sets->walk;
+                speed->horizontal = attr->walk;
 
                 if (glfwKeyPressed(window, GLFW_KEY_LEFT_SHIFT))
-                        speed->horizontal = sets->walk * sets->mod_sprint;
+                        speed->horizontal = attr->walk * attr->mod_sprint;
 
                 if (glfwKeyPressed(window, GLFW_KEY_LEFT_CONTROL))
-                        speed->horizontal = sets->walk * sets->mod_sneak;
+                        speed->horizontal = attr->walk * attr->mod_sneak;
         }
 
         // Vectors for forward/backward
@@ -485,16 +485,16 @@ void player_gravity_fall(player *p, world *w)
 void player_jump(player *p, GLFWwindow *window)
 {
         player_speed *speed = &p->speed;
-        player_speed_sets *sets = &p->speed_sets;
+        player_attr *attr = &p->attr;
 
         // TODO: Update jump height
 
         if (glfwKeyPressed(window, GLFW_KEY_SPACE)) {
                 if (p->state == ONGROUND) {
-                        speed->vertical = sets->jump;
+                        speed->vertical = attr->jump;
 
                         if (glfwKeyPressed(window, GLFW_KEY_LEFT_SHIFT)) {
-                                speed->horizontal = sets->air * sets->mod_sprint;
+                                speed->horizontal = attr->air * attr->mod_sprint;
                         }
 
                         p->state = INAIR;
@@ -504,17 +504,17 @@ void player_jump(player *p, GLFWwindow *window)
 
 void player_fly(player *p, world *w, GLFWwindow *window)
 {
-        player_speed_sets *sets = &p->speed_sets;
+        player_attr *attr = &p->attr;
         timestamp *ts = &player_ts;
         camera *cam = &p->cam;
 
         vec3 world_up = { 0.0f, 1.0f, 0.0f };
         vec3 vec_t = { 0 };
-        float speed = sets->fly;
-        int god = sets->fly_noclip;
+        float speed = attr->fly;
+        int god = attr->fly_noclip;
 
         if (glfwKeyPressed(window, GLFW_KEY_LEFT_SHIFT))
-                speed *= sets->mod_sprint;
+                speed *= attr->mod_sprint;
 
         // Vectors for forward/backward
         glm_vec_scale(cam->vector_front, ts->delta, vec_t);
@@ -591,14 +591,14 @@ void player_movement_handle(player *p, world *w, GLFWwindow *window)
 void player_movement_perform(player *p, world *w, GLFWwindow *window)
 {
         camera *cam = &p->cam;
-        player_speed_sets *speed_sets = &p->speed_sets;
+        player_attr *attr = &p->attr;
 
         timestamp_update(&player_ts);
 
         player_movement_handle(p, w, window);
 
         camera_position_update(cam, p);
-        camera_vectors_compute(cam, window, speed_sets->view);
+        camera_vectors_compute(cam, window, attr->view);
         camera_perspective_compute(cam);
 }
 
@@ -632,9 +632,9 @@ void player_key_callback(player *p, int key, int action)
         }
 }
 
-static inline void player_speed_sets_update(player *p)
+static inline void player_attr_update(player *p)
 {
-        player_speed_sets *sets = &p->speed_sets;
+        player_attr *attr = &p->attr;
 
         /*
          * v_t = v_0 + a * t
@@ -643,7 +643,7 @@ static inline void player_speed_sets_update(player *p)
          * a = g, s = h, v_0 = sqrt(2 * g * h)
          *
          */
-        sets->jump = sqrtf(2 * WORLD_GRAVITY * sets->jump_height);
+        attr->jump = sqrtf(2 * WORLD_GRAVITY * attr->jump_height);
 }
 
 int player_position_set(player *p, vec3 pos)
@@ -684,7 +684,7 @@ int player_init(player *p)
                 return -EINVAL;
 
         timestamp_init(&player_ts);
-        player_speed_sets_update(p);
+        player_attr_update(p);
 
         return 0;
 }

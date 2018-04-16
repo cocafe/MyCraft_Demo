@@ -51,7 +51,7 @@ typedef struct player_speed {
         float horizontal;
 } player_speed;
 
-typedef struct player_speed_sets {
+typedef struct player_attr {
         float   fly;
         int     fly_noclip;
 
@@ -65,7 +65,7 @@ typedef struct player_speed_sets {
         float   mod_sneak;
 
         float   view;
-} player_speed_sets;
+} player_attr;
 
 typedef struct player {
         dimension               size;
@@ -77,7 +77,7 @@ typedef struct player {
 
         player_movement         state;
         player_speed            speed;
-        player_speed_sets       speed_sets;
+        player_attr             attr;
 } player;
 
 void player_movement_perform(player *p, world *w, GLFWwindow *window);
