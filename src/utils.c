@@ -514,6 +514,9 @@ int seqlist_shrink(seqlist *list)
         if (!list)
                 return -EINVAL;
 
+        if (seqlist_is_empty(list))
+                return -ENODATA;
+
         new_data = realloc(list->data, list->element_size * list->count_utilized);
         if (!new_data) {
                 pr_err_alloc();
