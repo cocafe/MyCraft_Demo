@@ -853,6 +853,18 @@ void player_key_callback(player *p, int key, int action)
         }
 }
 
+void player_mouse_callback(player *p, int button, int action)
+{
+
+}
+
+void player_scroll_callback(player *p, double offset_x, double offset_y)
+{
+        UNUSED_PARAM(p);
+        UNUSED_PARAM(offset_x);
+        UNUSED_PARAM(offset_y);
+}
+
 static inline void player_attr_update(player *p)
 {
         player_attr *attr = &p->attr;

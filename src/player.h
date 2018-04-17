@@ -92,6 +92,9 @@ typedef struct player {
 void player_inputs_process(player *p, world *w, GLFWwindow *window);
 
 void player_key_callback(player *p, int key, int action);
+void player_mouse_callback(player *p, int button, int action);
+void player_scroll_callback(player *p, double offset_x, double offset_y);
+
 int player_position_set(player *p, vec3 pos);
 
 int player_hint(player *p, player *hint);
