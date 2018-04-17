@@ -21,7 +21,7 @@ extern inline void ivec3_copy(const ivec3 src, ivec3 dst)
         dst[2] = src[2];
 }
 
-float ivec3_distance(ivec3 v1, ivec3 v2)
+extern inline float ivec3_distance(ivec3 v1, ivec3 v2)
 {
         return sqrtf(glm_pow2(v2[0] - v1[0]) +
                      glm_pow2(v2[1] - v1[1]) +
