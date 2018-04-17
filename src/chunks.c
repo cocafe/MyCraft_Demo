@@ -425,8 +425,17 @@ int world_add_block(world *w, block *b, int update)
         block_in_chunk(b->origin_l, w->chunk_length, origin_chunk);
 
         c = world_get_chunk(w, origin_chunk);
-        if (c == NULL)
+        if (c == NULL) {
                 c = world_add_chunk(w, origin_chunk);
+        } else {
+                if (chunk_get_block(c, b->origin_l, L_WAIT)) {
+                        pr_err_func("block (%d %d %d) already exists\n",
+                                    b->origin_l[X],
+                                    b->origin_l[Y],
+                                    b->origin_l[Z]);
+                        return -EEXIST;
+                }
+        }
 
         chunk_add_block(c, b);
 
