@@ -658,8 +658,6 @@ void *world_chunks_worker(void *data)
                 if (g_program->state == PROGRAM_EXIT)
                         break;
 
-                pr_err_func("worker woke up\n");
-
                 world_update_chunks(w);
 
                 pthread_spin_lock(&w->update_spin);
