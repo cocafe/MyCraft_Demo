@@ -70,6 +70,12 @@ static block_shader *block_shader_list[] = {
 #define BLOCK_TEXEL_SLOT_GLASS                  { 11, 15 }
 #define BLOCK_TEXEL_SLOT_DEBUG                  { 15, 15 }
 #define BLOCK_TEXEL_SLOT_DEBUG2                 { 15, 14 }
+#define BLOCK_TEXEL_SLOT_DEBUG3_FRONT           { 15, 13 }
+#define BLOCK_TEXEL_SLOT_DEBUG3_BACK            { 15, 12 }
+#define BLOCK_TEXEL_SLOT_DEBUG3_LEFT            { 15, 11 }
+#define BLOCK_TEXEL_SLOT_DEBUG3_RIGHT           { 15, 10 }
+#define BLOCK_TEXEL_SLOT_DEBUG3_TOP             { 15, 9  }
+#define BLOCK_TEXEL_SLOT_DEBUG3_BOTTOM          { 15, 8  }
 
 #define BLOCK_TEXTURE_NONE                                      \
         .texel = {                                              \
@@ -109,6 +115,9 @@ static block_shader *block_shader_list[] = {
 static block_attr block_dummy = {
         .name = "dummy",
 
+        BLOCK_DIMENSION_CUBE,
+        BLOCK_MODEL_CUBE,
+
         .texel = {
                 .textured = 1,
                 .texel = GL_TEXTURE_NONE,
@@ -120,6 +129,30 @@ static block_attr block_dummy = {
                         [CUBE_BOTTOM] = BLOCK_TEXEL_SLOT_DEBUG,
                         [CUBE_LEFT] = BLOCK_TEXEL_SLOT_DEBUG,
                         [CUBE_RIGHT] = BLOCK_TEXEL_SLOT_DEBUG,
+                },
+        },
+
+        .visible = 1,
+        .shader = BLK_SHADER_GENERIC,
+};
+
+static block_attr block_debug_faces = {
+        .name = "debug face",
+
+        BLOCK_DIMENSION_CUBE,
+        BLOCK_MODEL_CUBE,
+
+        .texel = {
+                .textured = 1,
+                .texel = GL_TEXTURE_NONE,
+                .texel_pack = TEXELPACK_GENERIC_BLOCKS,
+                .texel_slot = {
+                        [CUBE_FRONT] = BLOCK_TEXEL_SLOT_DEBUG3_FRONT,
+                        [CUBE_BACK] = BLOCK_TEXEL_SLOT_DEBUG3_BACK,
+                        [CUBE_TOP] = BLOCK_TEXEL_SLOT_DEBUG3_TOP,
+                        [CUBE_BOTTOM] = BLOCK_TEXEL_SLOT_DEBUG3_BOTTOM,
+                        [CUBE_LEFT] = BLOCK_TEXEL_SLOT_DEBUG3_LEFT,
+                        [CUBE_RIGHT] = BLOCK_TEXEL_SLOT_DEBUG3_RIGHT,
                 },
         },
 
@@ -262,6 +295,7 @@ static block_attr *block_attr_list[] = {
         [BLOCK_STONE]           = &block_stone,
         [BLOCK_TNT]             = &block_tnt,
         [BLOCK_GLASS]           = &block_glass,
+        [BLOCK_DEBUG]           = &block_debug_faces,
         [BLOCK_DUMMY]           = &block_dummy,
         NULL,
 };
