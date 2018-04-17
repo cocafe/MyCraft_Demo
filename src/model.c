@@ -21,15 +21,15 @@ enum texel_corner {
         NR_TEXEL_CORNER,
 };
 
-typedef enum quad_vertices {
-        UL  = V1,
-        UR  = V2,
-        LL  = V3,
-        LR  = V5,
+typedef enum cube_face_vertices {
+        UL  = CUBE_FACE_UL,
+        UR  = CUBE_FACE_UR,
+        LL  = CUBE_FACE_LL,
+        LR  = CUBE_FACE_LR,
 
         UR1 = V4,
         LL1 = V6,
-} quad_vertices;
+} cube_face_vertices;
 
 // Normalized, not rotated
 static vec3 cube_normals[] = {
