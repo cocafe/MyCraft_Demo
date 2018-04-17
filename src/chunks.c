@@ -196,6 +196,17 @@ int chunk_deinit(chunk *c)
         return 0;
 }
 
+int chunk_is_empty(chunk *c)
+{
+        if (!c)
+                return 1;
+
+        if (linklist_is_empty(c->blocks))
+                return 1;
+
+        return 0;
+}
+
 static inline int chunk_state_get(chunk *c, int wait)
 {
         int state = CHUNK_UNKNOWN;
