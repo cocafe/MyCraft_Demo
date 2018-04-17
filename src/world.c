@@ -90,14 +90,15 @@ int super_flat_generate(world *w, super_flat_preset_idx idx, int width, int leng
                                         };
 
                                         block_init(b, type, origin_l);
-                                        world_add_block(w, b);
-                                        // block_deinit(b);
+                                        world_add_block(w, b, 0);
                                 }
                         }
 
                         last_height = j;
                 }
         }
+
+        world_update_trigger(w);
 
         memfree((void **)&b);
 
