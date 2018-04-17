@@ -720,6 +720,7 @@ void player_fly(player *p, world *w, GLFWwindow *window)
         camera *cam = &p->cam;
 
         vec3 world_up = { 0.0f, 1.0f, 0.0f };
+        vec3 horizontal_front = { 0 };
         vec3 vec_t = { 0 };
         float speed = attr->fly;
         int god = attr->fly_noclip;
@@ -728,8 +729,15 @@ void player_fly(player *p, world *w, GLFWwindow *window)
                 speed *= attr->mod_sprint;
 
         // Vectors for forward/backward
-        glm_vec_scale(cam->vector_front, ts->delta, vec_t);
-        glm_vec_scale(vec_t, speed, vec_t);
+        if (god) {
+                glm_vec_scale(cam->vector_front, ts->delta, vec_t);
+                glm_vec_scale(vec_t, speed, vec_t);
+        } else {
+                glm_cross(cam->vector_right, world_up, horizontal_front);
+                glm_vec_scale(horizontal_front, ts->delta, vec_t);
+                glm_vec_scale(vec_t, speed, vec_t);
+                glm_vec_inv(vec_t);
+        }
 
         // Forward
         if (glfwKeyPressed(window, GLFW_KEY_W)) {
