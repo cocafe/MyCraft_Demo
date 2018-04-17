@@ -92,6 +92,9 @@ int text_render_deinit(void);
 int crosshair_textured_draw(float scale, int fb_width, int fb_height);
 int crosshair_textured_init(void);
 int crosshair_textured_deinit(void);
+
+int face_is_back_face(vec3 f_vertex, vec3 f_normal, vec3 v_pos);
+
 /**
  * VBOs
  */

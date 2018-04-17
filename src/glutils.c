@@ -1148,6 +1148,34 @@ int crosshair_textured_deinit(void)
 }
 
 /**
+ * face_is_back_face() - check face is back face or not
+ *
+ * Dot((V_0 - P), N) >= 0   ==> back face
+ *
+ * @param f_vertex: vertex on face
+ * @param f_normal: normal of face
+ * @param v_position: viewing position
+ * @return 1 on back face
+ */
+extern inline int face_is_back_face(vec3 f_vertex, vec3 f_normal, vec3 v_pos)
+{
+        vec3 t = { 0 };
+        float d;
+
+        glm_vec_sub(f_vertex, v_pos, t);
+
+        d = glm_dot(t, f_normal);
+
+        if (d > 0)
+                return 1;
+
+        if (float_equal(d, 0.0f, FLT_EPSILON))
+                return 1;
+
+        return 0;
+}
+
+/**
  * FPS Meter
  */
 
