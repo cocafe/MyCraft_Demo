@@ -760,25 +760,39 @@ void string_vertex_generate(text_font *font, const char *str,
          *
          */
 
-        int column = font->texel_width / font->cell_width;
-        int row = font->texel_height / font->cell_height;
-
         int char_w = font->char_width;
         int char_h = font->char_height;
 
-        float uv_x_div = 1.0f / (float)column;
-        float uv_y_div = 1.0f / (float)row;
+        float char_w_scaled = font->char_width * scale;
+        float char_h_scaled = font->char_height * scale;
+
+        int cell_cols = font->texel_width / font->cell_width;
+        int cell_rows = font->texel_height / font->cell_height;
+
+        float uv_x_div = 1.0f / (float)cell_cols;
+        float uv_y_div = 1.0f / (float)cell_rows;
 
         float uv_h = (float)char_h / font->cell_height;
         float uv_w = (float)char_w / font->cell_width;
 
-        for (size_t i = 0; i < strlen(str); ++i) {
+        for (size_t i = 0, col = 0; i < strlen(str); ++i) {
+                char char_c = str[i];
+
+                if (char_c == '\n') {
+                        col = 0;
+                        y += char_h_scaled;
+
+                        continue;
+                }
+
                 vec2 vertex[VERTICES_QUAD];
 
-                float x1 = x + (i * char_w) * scale;
-                float y1 = fb_h - (char_h * scale) - y; // Move (0, 0) from frame LL to UL
-                float x2 = x1 + char_w * scale;
-                float y2 = y1 + char_h * scale;
+                float x1 = x + col * char_w_scaled;
+                float y1 = fb_h - char_h_scaled - y; // Move (0, 0) from frame LL to UL
+                float x2 = x1 + char_w_scaled;
+                float y2 = y1 + char_h_scaled;
+
+                col++;
 
                 vertex[UL][X] = x1; vertex[UL][Y] = y2;
                 vertex[UR][X] = x2; vertex[UR][Y] = y2;
@@ -794,9 +808,8 @@ void string_vertex_generate(text_font *font, const char *str,
                 seqlist_append(vertices, vertex[LR]);
                 seqlist_append(vertices, vertex[LL]);
 
-                char charcode = str[i];
-                float uv_x = (charcode % column) / (float)column;
-                float uv_y = (charcode / row) / (float)row;
+                float uv_x = (char_c % cell_cols) / (float)cell_cols;
+                float uv_y = (char_c / cell_rows) / (float)cell_rows;
                 vec2 uv[VERTICES_QUAD];
 
                 x1 = uv_x;
