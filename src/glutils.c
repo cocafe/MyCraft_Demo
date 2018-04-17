@@ -621,7 +621,8 @@ typedef struct line_render {
 
 static line_render g_line_render;
 
-int line_draw(float *vertices, size_t count, vec4 color, GLenum color_op, mat4 mat_transform)
+int line_3d_draw(float *vertices, size_t count, vec4 color, GLenum color_op,
+                 mat4 mat_transform)
 {
         line_render *lr = &g_line_render;
         gl_attr *glattr = &lr->glattr;

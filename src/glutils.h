@@ -78,12 +78,11 @@ int gl_attr_buffer_delete(gl_attr *attr);
 int gl_vertices_alloc(vec3 **positions, vec3 **normals, vec2 **uvs, size_t count);
 void gl_vertices_free(vec3 **positions, vec3 **normals, vec2 **uvs);
 
-int line_draw(float *vertices, size_t count, vec4 color,
-              GLenum color_op, mat4 mat_transform);
+int line_3d_draw(float *vertices, size_t count,
+                 vec4 color, GLenum color_op,
+                 mat4 mat_transform);
 int line_render_deinit(void);
 int line_render_init(void);
-
-int line_draw_test(mat4 mat_transform);
 
 int text_string_draw(const char *str, int x, int y, float scale, int background,
                      int fb_width, int fb_height);

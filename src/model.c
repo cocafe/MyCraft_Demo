@@ -412,8 +412,8 @@ int block_wireframe_draw(ivec3 origin_l, vec4 color, int invert_color, mat4 mat_
 
         block_wireframe_generate(lines, wireframe_scale, origin_gl);
 
-        line_draw(&lines[0][0][0], VERTICES_LINE * LINES_CUBE,
-                  color, invert_color ? GL_INVERT : GL_COPY, mat_transform);
+        line_3d_draw(&lines[0][0][0], VERTICES_LINE * LINES_CUBE,
+                     color, invert_color ? GL_INVERT : GL_COPY, mat_transform);
 
         return 0;
 }
