@@ -15,6 +15,7 @@
 #include "thread.h"
 #include "glutils.h"
 #include "chunks.h"
+#include "mycraft.h"
 
 // Normalized, not rotated
 static ivec3 block_normals[] = {
@@ -396,7 +397,7 @@ block *world_get_block(world *w, ivec3 origin_block, int wait)
         return b;
 }
 
-int world_add_block(world *w, block *b)
+int world_add_block(world *w, block *b, int update)
 {
         ivec3 origin_chunk = { 0 };
         chunk *c;
@@ -418,6 +419,9 @@ int world_add_block(world *w, block *b)
 
         chunk_add_block(c, b);
 
+        if (update)
+                world_update_trigger(w);
+
         return 0;
 }
 
@@ -438,6 +442,8 @@ int world_del_block(world *w, ivec3 origin_block)
         }
 
         chunk_del_block(c, origin_block);
+
+        world_update_trigger(w);
 
         return 0;
 }
@@ -618,6 +624,62 @@ int world_update_chunks(world *w)
 
                 pthread_create_detached(chunk_update_worker, arg);
         }
+
+        return 0;
+}
+
+void *world_chunks_worker(void *data)
+{
+        world *w = data;
+        int pending;
+
+        while (1) {
+                pthread_spin_lock(&w->update_spin);
+                pending = w->update_pending;
+                pthread_spin_unlock(&w->update_spin);
+
+                // If we have no work pending, sleep and wait for signal
+                if (pending == 0) {
+                        pthread_cond_wait(&w->update_cond, &w->update_mutex);
+                        pthread_mutex_unlock(&w->update_mutex);
+                }
+
+                if (g_program->state == PROGRAM_EXIT)
+                        break;
+
+                pr_err_func("worker woke up\n");
+
+                world_update_chunks(w);
+
+                pthread_spin_lock(&w->update_spin);
+                if (w->update_pending > 0)
+                        w->update_pending--;
+                pthread_spin_unlock(&w->update_spin);
+        }
+
+        pthread_exit(NULL);
+
+        return NULL;
+}
+
+/**
+ * world_update_trigger() - try to wake up chunk update thread
+ *
+ * @param w: pointer to world
+ * @return
+ */
+int world_update_trigger(world *w)
+{
+        if (!w)
+                return -EINVAL;
+
+        pthread_spin_lock(&w->update_spin);
+        w->update_pending++;
+        pthread_spin_unlock(&w->update_spin);
+
+        pthread_mutex_lock(&w->update_mutex);
+        pthread_cond_signal(&w->update_cond);
+        pthread_mutex_unlock(&w->update_mutex);
 
         return 0;
 }
@@ -805,6 +867,12 @@ int world_init(world *w)
         linklist_alloc(&w->chunks);
         linklist_init(w->chunks, sizeof(chunk));
 
+        pthread_spin_init(&w->update_spin, PTHREAD_PROCESS_PRIVATE);
+        pthread_mutex_init(&w->update_mutex, NULL);
+        pthread_cond_init(&w->update_cond, NULL);
+
+        w->update_worker = pthread_create_joinable(world_chunks_worker, w);
+
         return 0;
 }
 
@@ -828,6 +896,20 @@ int world_deinit(world *w)
 
         linklist_deinit(w->chunks);
         linklist_free(&w->chunks);
+
+        pthread_spin_lock(&w->update_spin);
+        if (w->update_pending == 0) {
+                pthread_mutex_lock(&w->update_mutex);
+                pthread_cond_signal(&w->update_cond);
+                pthread_mutex_unlock(&w->update_mutex);
+        }
+        pthread_spin_unlock(&w->update_spin);
+
+        pthread_join(w->update_worker, NULL);
+
+        pthread_mutex_destroy(&w->update_cond);
+        pthread_mutex_destroy(&w->update_mutex);
+        pthread_spin_destroy(&w->update_spin);
 
         return 0;
 }

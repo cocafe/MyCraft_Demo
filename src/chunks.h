@@ -53,11 +53,17 @@ typedef struct chunk {
 } chunk;
 
 typedef struct world {
-        int32_t         height_min;
-        int32_t         height_max;
+        int32_t                 height_min;
+        int32_t                 height_max;
 
-        int32_t         chunk_length;
-        linklist        *chunks;
+        int32_t                 chunk_length;
+        linklist                *chunks;
+
+        int                     update_pending;
+        pthread_t               update_worker;
+        pthread_cond_t          update_cond;
+        pthread_mutex_t         update_mutex;
+        pthread_spinlock_t      update_spin;
 } world;
 
 void point_local_to_gl(const ivec3 local, int edge_len, vec3 gl);
@@ -79,12 +85,14 @@ int chunk_cull_blocks(chunk *c, world *w);
 chunk *world_add_chunk(world *w, ivec3 origin_chunk);
 chunk *world_get_chunk(world *w, ivec3 origin_chunk);
 
-int world_add_block(world *w, block *b);
+int world_add_block(world *w, block *b, int update);
 int world_del_block(world *w, ivec3 origin_block);
 block *world_get_block(world *w, ivec3 origin_block, int wait);
 
 int world_update_chunks(world *w);
 int world_draw_chunks(world *w, mat4 mat_transform);
+
+int world_update_trigger(world *w);
 
 int world_init(world *w);
 int world_deinit(world *w);
