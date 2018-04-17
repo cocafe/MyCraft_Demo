@@ -28,15 +28,6 @@ extern inline float ivec3_distance(ivec3 v1, ivec3 v2)
                      glm_pow2(v2[2] - v1[2]));
 }
 
-extern inline void ivec3_normalize(ivec3 v)
-{
-        float length = sqrtf(glm_pow2(v[0]) + glm_pow2(v[1]) + glm_pow2(v[2]));
-
-        v[0] /= length;
-        v[1] /= length;
-        v[2] /= length;
-}
-
 extern inline void vec3_round_ivec3(const vec3 src, ivec3 dst)
 {
         dst[0] = (int)(roundf(src[0]));
