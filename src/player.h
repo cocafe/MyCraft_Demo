@@ -65,7 +65,15 @@ typedef struct player_attr {
         float   mod_sneak;
 
         float   view;
+
+        int32_t raycast_radius;
 } player_attr;
+
+typedef struct player_hittest {
+        int             hit;
+        ivec3           origin_b;
+        block_face      *face;
+} player_hittest;
 
 typedef struct player {
         dimension               size;
@@ -76,11 +84,12 @@ typedef struct player {
         vec3                    cam_offset;
 
         player_movement         state;
+        player_hittest          hittest;
         player_speed            speed;
         player_attr             attr;
 } player;
 
-void player_movement_perform(player *p, world *w, GLFWwindow *window);
+void player_inputs_process(player *p, world *w, GLFWwindow *window);
 
 void player_key_callback(player *p, int key, int action);
 int player_position_set(player *p, vec3 pos);

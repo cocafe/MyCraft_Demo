@@ -55,6 +55,8 @@ static player default_player = {
                 .mod_sneak = 0.5f,
 
                 .view = 0.001f,
+
+                .raycast_radius = 5 * BLOCK_EDGE_LEN_GLUNIT,
         },
 
         .cam = {
@@ -73,6 +75,215 @@ static player default_player = {
 };
 
 static timestamp player_ts;
+
+/**
+ * line_plane_is_intersected() - check ray is whether intersected with plane
+ *
+ * @param contact: contact point will be returned
+ * @param ray: ray direction
+ * @param ray_origin: ray origin point
+ * @param normal: normal of plane
+ * @param coord: point on plane
+ * @return return 1 and contact point on intersection, 0 on false
+ */
+int line_plane_is_intersected(vec3 contact, vec3 ray, vec3 ray_origin, vec3 normal, vec3 coord)
+{
+        vec3 r = { 0 };
+
+        float d = glm_dot(normal, coord);
+
+        // Check for parallel case
+        if (glm_dot(normal, ray) == 0) {
+                return 0;
+        }
+
+        float x = (d - glm_dot(normal, ray_origin)) / glm_dot(normal, ray);
+
+        // contact point = ray origin + normalized(ray) * x
+        glm_vec_copy(ray, r);
+        glm_normalize(r);
+        glm_vec_scale(r, x, r);
+        glm_vec_add(ray_origin, r, contact);
+
+        return 1;
+}
+
+/**
+ * check_in_range() - check value in range
+ *
+ * @param t: value to test
+ * @param a: range a
+ * @param b: range b
+ * @return 1 on t in range [min(a, b), max(a, b)]
+ */
+static inline int check_in_range(float t, float a, float b)
+{
+        float min, max;
+
+        if (a < b) {
+                min = a; max = b;
+        } else { // b >= a
+                min = b; max = a;
+        }
+
+        // XXX: imprecise in little/greater comparision
+        if (float_equal(t, a, FLT_EPSILON) || float_equal(t, b, FLT_EPSILON))
+                return 1;
+
+        if (t < min)
+                return 0;
+        else if (t > max)
+                return 0;
+
+        return 1;
+}
+
+static inline int vec3_in_range(vec3 t, vec3 a, vec3 b)
+{
+        if (!check_in_range(t[X], a[X], b[X]) ||
+            !check_in_range(t[Y], a[Y], b[Y]) ||
+            !check_in_range(t[Z], a[Z], b[Z]))
+                return 0;
+        else
+                return 1;
+}
+
+/**
+ * point_is_on_block_face() - check contact point is on block face
+ *
+ * this method is very conditional, it requires block is axis-aligned.
+ *
+ * @param face: block face to detect
+ * @param point: contact point
+ * @return 1 on true, 0 on false
+ */
+static inline int point_is_on_block_face(block_face *face, vec3 point)
+{
+        vec3 v1, v2;
+
+        glm_vec_copy(face->vertices[CUBE_FACE_UL].position, v1);
+        glm_vec_copy(face->vertices[CUBE_FACE_LR].position, v2);
+
+        if (!vec3_in_range(point, v1, v2))
+                return 0;
+
+        return 1;
+}
+
+static inline int block_in_distance(ivec3 o1, ivec3 o2, int distance)
+{
+        float ret = ivec3_distance(o1, o2);
+
+        if (ret > (float)distance)
+                return 0;
+        else
+                return 1;
+}
+
+/**
+ * player_hittest_block_face() - check front ray hit a block face
+ *
+ * @param p: pointer to player
+ * @param b: pointer to block
+ * @return pointer to hit block face, NULL on failure
+ */
+block_face *player_hittest_block_face(player *p, block *b)
+{
+        for (int i = 0; i < CUBE_QUAD_FACES; ++i) {
+                block_face *f = &b->model.faces[i];
+                camera *cam = &p->cam;
+                vec3 ray = { 0 };
+                vec3 contact = { 0 };
+
+                glm_vec_add(p->cam.position, p->cam.vector_front, ray);
+
+                if (!f->visible)
+                        continue;
+
+                if (face_is_back_face(f->vertices[V1].position,
+                                      f->normal,
+                                      cam->position))
+                        continue;
+
+                if (unlikely(!f->vertices))
+                        continue;
+
+                if (!line_plane_is_intersected(contact,
+                                               cam->vector_front,
+                                               cam->position,
+                                               f->normal,
+                                               f->vertices[V1].position))
+                        continue;
+
+                if (!point_is_on_block_face(f, contact))
+                        continue;
+
+                return f;
+        }
+
+        return NULL;
+}
+
+int player_ray_hittest(player *p, world *w, int radius)
+{
+        player_hittest *ret = &p->hittest;
+        ivec3 point_s = { 0 };
+        ivec3 origin_s = { 0 };
+        ivec3 origin_p = { 0 };
+        vec3 origin_t = { 0 };
+
+        point_gl_to_local(p->origin_gl, BLOCK_EDGE_LEN_GLUNIT, origin_t);
+
+        // Get block position we at (round to integer)
+        vec3_round_ivec3(origin_t, origin_p);
+
+        // Compute searching area begin point
+        ivec3_copy(origin_p, point_s);
+        point_s[X] -= radius;
+        point_s[Y] -= radius; // World height
+        point_s[Z] -= radius;
+
+        int search_max = radius * 2;
+
+        for (int y = 0; y < search_max; ++y) {
+                for (int x = 0; x < search_max; ++x) {
+                        for (int z = 0; z < search_max; ++z) {
+                                block *b;
+                                block_face *f;
+
+                                origin_s[X] = point_s[X] + x;
+                                origin_s[Y] = point_s[Y] + y;
+                                origin_s[Z] = point_s[Z] + z;
+
+                                // We limit the ray test space to a sphere
+                                if (!block_in_distance(origin_s, origin_p, radius))
+                                        continue;
+
+                                b = world_get_block(w, origin_s, L_NOWAIT);
+                                if (b == NULL)
+                                        continue;
+
+                                f = player_hittest_block_face(p, b);
+                                if (!f)
+                                        continue;
+
+                                // Hit a face
+                                ret->hit = 1;
+                                ret->face = f;
+                                ivec3_copy(origin_s, ret->origin_b);
+
+                                return 1;
+                        }
+                }
+        }
+
+        // Hit nothing process
+        ret->hit = 0;
+        ret->face = NULL;
+        memzero(ret->origin_b, sizeof(ivec3));
+
+        return 0;
+}
 
 void camera_vectors_compute(camera *cam, GLFWwindow *window, double speed)
 {
@@ -588,7 +799,7 @@ void player_movement_handle(player *p, world *w, GLFWwindow *window)
         }
 }
 
-void player_movement_perform(player *p, world *w, GLFWwindow *window)
+void player_inputs_process(player *p, world *w, GLFWwindow *window)
 {
         camera *cam = &p->cam;
         player_attr *attr = &p->attr;
@@ -600,6 +811,8 @@ void player_movement_perform(player *p, world *w, GLFWwindow *window)
         camera_position_update(cam, p);
         camera_vectors_compute(cam, window, attr->view);
         camera_perspective_compute(cam);
+
+        player_ray_hittest(p, w, attr->raycast_radius);
 }
 
 static inline void player_fly_switch(player *p)
