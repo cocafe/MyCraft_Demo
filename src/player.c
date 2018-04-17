@@ -834,8 +834,42 @@ static inline void player_fly_switch(player *p)
         }
 }
 
+void player_action_destroy(player *p, world *w)
+{
+        player_hittest *hit_test = &p->hittest;
+
+        if (!hit_test->hit)
+                return;
+
+        world_del_block(w, hit_test->origin_b);
+}
+
+void player_action_place(player *p, world *w)
+{
+        player_hittest *hit_test = &p->hittest;
+        block_face *f = hit_test->face;
+        ivec3 origin_new = { 0 };
+        ivec3 f_normal = { 0 };
+
+        if (!hit_test->hit)
+                return;
+
+        vec3_round_ivec3(f->normal, f_normal);
+
+        // Face normal must be normalized
+        ivec3_add(hit_test->origin_b, f_normal, origin_new);
+
+        // TODO
+        block block1;
+        block_init(&block1, block_attr_get(BLOCK_DEBUG), origin_new);
+        world_add_block(w, &block1, 1);
+}
+
 void player_key_callback(player *p, int key, int action)
 {
+        if (!p)
+                return;
+
         if (key == GLFW_KEY_F && action == GLFW_PRESS) {
                 player_fly_switch(p);
         }
@@ -853,9 +887,26 @@ void player_key_callback(player *p, int key, int action)
         }
 }
 
-void player_mouse_callback(player *p, int button, int action)
+void player_mouse_callback(player *p, world *w, int button, int action)
 {
+        if (!p || !w)
+                return;
 
+        switch (button) {
+                case GLFW_MOUSE_BUTTON_LEFT:
+                        if (action == GLFW_RELEASE)
+                                player_action_destroy(p, w);
+
+                        break;
+
+                case GLFW_MOUSE_BUTTON_RIGHT:
+                        if (action == GLFW_RELEASE)
+                                player_action_place(p, w);
+                        break;
+
+                default:
+                        break;
+        }
 }
 
 void player_scroll_callback(player *p, double offset_x, double offset_y)
