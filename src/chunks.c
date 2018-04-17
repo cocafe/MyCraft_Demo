@@ -382,6 +382,9 @@ block *world_get_block(world *w, ivec3 origin_block, int wait)
         if (!w)
                 return NULL;
 
+        if (origin_block[Y] < w->height_min || origin_block[Y] > w->height_max)
+                return NULL;
+
         block_in_chunk(origin_block, w->chunk_length, origin_chunk);
 
         c = world_get_chunk(w, origin_chunk);
