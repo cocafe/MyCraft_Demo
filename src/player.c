@@ -119,6 +119,7 @@ int line_plane_is_intersected(vec3 contact, vec3 ray, vec3 ray_origin, vec3 norm
 static inline int check_in_range(float t, float a, float b)
 {
         float min, max;
+        float epsilon = 0.0001f;
 
         if (a < b) {
                 min = a; max = b;
@@ -127,7 +128,7 @@ static inline int check_in_range(float t, float a, float b)
         }
 
         // XXX: imprecise in little/greater comparision
-        if (float_equal(t, a, FLT_EPSILON) || float_equal(t, b, FLT_EPSILON))
+        if (float_equal(t, a, epsilon) || float_equal(t, b, epsilon))
                 return 1;
 
         if (t < min)
