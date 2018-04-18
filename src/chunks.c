@@ -277,9 +277,23 @@ static inline linklist_node *chunk_get_block_node(chunk *c, ivec3 origin_b)
         return ret;
 }
 
-block *chunk_get_block(chunk *c, ivec3 origin_block, int wait)
+static inline block *__chunk_get_block(chunk *c, ivec3 origin_block)
 {
         linklist_node *node;
+        block *ret = NULL;
+
+        if (linklist_is_empty(c->blocks))
+                return ret;
+
+        node = chunk_get_block_node(c, origin_block);
+        if (node)
+                ret = node->data;
+
+        return ret;
+}
+
+block *chunk_get_block(chunk *c, ivec3 origin_block, int wait)
+{
         block *ret = NULL;
 
         if (wait == L_WAIT) {
@@ -289,14 +303,8 @@ block *chunk_get_block(chunk *c, ivec3 origin_block, int wait)
                         return ret;
         }
 
-        if (linklist_is_empty(c->blocks))
-                goto out;
+        ret = __chunk_get_block(c, origin_block);
 
-        node = chunk_get_block_node(c, origin_block);
-        if (node)
-                ret = node->data;
-
-out:
         pthread_rwlock_unlock(&c->rwlock);
 
         return ret;
@@ -385,7 +393,7 @@ out:
         return ret;
 }
 
-block *world_get_block(world *w, ivec3 origin_block, int wait)
+static inline block *__world_get_block(world *w, ivec3 origin_block, int wait, int nolock)
 {
         ivec3 origin_chunk = { 0 };
         chunk *c;
@@ -403,9 +411,17 @@ block *world_get_block(world *w, ivec3 origin_block, int wait)
         if (!c)
                 return NULL;
 
-        b = chunk_get_block(c, origin_block, wait);
+        if (nolock)
+                b = __chunk_get_block(c, origin_block);
+        else
+                b = chunk_get_block(c, origin_block, wait);
 
         return b;
+}
+
+block *world_get_block(world *w, ivec3 origin_block, int wait)
+{
+        return __world_get_block(w, origin_block, wait, 0);
 }
 
 int world_add_block(world *w, block *b, int update)
@@ -567,7 +583,7 @@ int chunk_cull_blocks(chunk *c, world *w)
                         block *b_near;
 
                         block_near_origin_get(b, i, o_near);
-                        b_near = world_get_block(w, o_near, L_WAIT);
+                        b_near = __world_get_block(w, o_near, L_NOWAIT, 1);
 
                         if (!b_near) {
                                 if (!f->visible) {
