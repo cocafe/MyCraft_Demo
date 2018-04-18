@@ -76,6 +76,11 @@ static player default_player = {
 
 static timestamp player_ts;
 
+typedef struct hit_block {
+        block           *b;
+        block_face      *f;
+} hit_block;
+
 /**
  * line_plane_is_intersected() - check ray is whether intersected with plane
  *
@@ -225,13 +230,42 @@ block_face *player_hittest_block_face(player *p, block *b)
         return NULL;
 }
 
+hit_block *hit_block_nearest_get(linklist *list, ivec3 origin_p)
+{
+        hit_block *ret = NULL;
+        linklist_node *pos;
+        float dist = 0;
+
+        linklist_for_each_node(pos, list->head) {
+                hit_block *hit = (hit_block *)pos->data;
+                float dist_n = ivec3_distance(hit->b->origin_l, origin_p);
+
+                if (pos == list->head) {
+                        dist = dist_n;
+                        ret = hit;
+                        continue;
+                }
+
+                if (dist_n < dist) {
+                        dist = dist_n;
+                        ret = hit;
+                        continue;
+                }
+        }
+
+        return ret;
+}
+
 int player_ray_hittest(player *p, world *w, int radius)
 {
         player_hittest *ret = &p->hittest;
+        linklist hit_blocks;
         ivec3 point_s = { 0 };
         ivec3 origin_s = { 0 };
         ivec3 origin_p = { 0 };
         vec3 origin_t = { 0 };
+
+        linklist_init(&hit_blocks, sizeof(hit_block));
 
         point_gl_to_local(p->origin_gl, BLOCK_EDGE_LEN_GLUNIT, origin_t);
 
@@ -246,6 +280,7 @@ int player_ray_hittest(player *p, world *w, int radius)
 
         int search_max = radius * 2;
 
+        // FIXME: TOO many blocks to test if not return in loops
         for (int y = 0; y < search_max; ++y) {
                 for (int x = 0; x < search_max; ++x) {
                         for (int z = 0; z < search_max; ++z) {
@@ -268,22 +303,27 @@ int player_ray_hittest(player *p, world *w, int radius)
                                 if (!f)
                                         continue;
 
-                                // Hit a face
-                                ret->hit = 1;
-                                ret->face = f;
-                                ivec3_copy(origin_s, ret->origin_b);
-
-                                return 1;
+                                linklist_append(&hit_blocks, &(hit_block){ .b = b, .f = f });
                         }
                 }
         }
 
-        // Hit nothing process
-        ret->hit = 0;
-        ret->face = NULL;
-        memzero(ret->origin_b, sizeof(ivec3));
+        if (linklist_is_empty(&hit_blocks)) {
+                ret->hit = 0;
+                linklist_deinit(&hit_blocks);
 
-        return 0;
+                return 0;
+        }
+
+        hit_block *nearest = hit_block_nearest_get(&hit_blocks, origin_p);
+
+        ret->hit = 1;
+        ret->face = nearest->f;
+        ivec3_copy(nearest->b->origin_l, ret->origin_b);
+
+        linklist_deinit(&hit_blocks);
+
+        return 1;
 }
 
 void camera_vectors_compute(camera *cam, GLFWwindow *window, double speed)
