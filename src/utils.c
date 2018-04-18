@@ -14,6 +14,13 @@
 #include "debug.h"
 #include "utils.h"
 
+extern inline void ivec3_add(const ivec3 a, const ivec3 b, ivec3 dst)
+{
+        dst[0] = a[0] + b[0];
+        dst[1] = a[1] + b[1];
+        dst[2] = a[2] + b[2];
+}
+
 extern inline void ivec3_copy(const ivec3 src, ivec3 dst)
 {
         dst[0] = src[0];
