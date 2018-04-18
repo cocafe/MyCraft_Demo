@@ -206,12 +206,12 @@ block_face *player_hittest_block_face(player *p, block *b)
                 if (!f->visible)
                         continue;
 
+                if (!f->vertices)
+                        continue;
+
                 if (face_is_back_face(f->vertices[V1].position,
                                       f->normal,
                                       cam->position))
-                        continue;
-
-                if (unlikely(!f->vertices))
                         continue;
 
                 if (!line_plane_is_intersected(contact,
