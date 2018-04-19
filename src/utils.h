@@ -224,7 +224,6 @@ int seqlist_is_empty(seqlist *list);
 
 typedef struct linklist_node {
         void                    *data;
-        // TODO: We can make it custom attribute struct
         int                     flag_delete;
 
         struct linklist_node    *prev;
@@ -239,10 +238,11 @@ int linklist_node_deinit(linklist_node *n);
 
 typedef struct linklist {
         linklist_node           *head;
+
         size_t                  element_size;
         size_t                  element_count;
 
-        // FIXME: Not thread-safe
+        pthread_spinlock_t      spinlock;
 } linklist;
 
 #define linklist_for_each_node(pos, head) \

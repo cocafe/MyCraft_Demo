@@ -718,6 +718,8 @@ int linklist_init(linklist *list, size_t element_size)
         list->element_size = element_size;
         list->element_count = 0;
 
+        pthread_spin_init(&list->spinlock, PTHREAD_PROCESS_PRIVATE);
+
         return 0;
 }
 
@@ -731,6 +733,8 @@ int linklist_deinit(linklist *list)
         if (!list->head)
                 return -ENODATA;
 
+        pthread_spin_lock(&list->spinlock);
+
         curr = list->head;
         while (curr) {
                 next = curr->next;
@@ -740,6 +744,10 @@ int linklist_deinit(linklist *list)
 
                 curr = next;
         }
+
+        pthread_spin_unlock(&list->spinlock);
+
+        pthread_spin_destroy(&list->spinlock);
 
         memzero(list, sizeof(linklist));
 
@@ -756,27 +764,22 @@ int linklist_deinit(linklist *list)
 void *linklist_append(linklist *list, void *element)
 {
         linklist_node *curr, *node;
-        void *data;
-        int ret;
+        void *ret = NULL;
 
         if (!list || !element)
                 return NULL;
 
-        if (list->head == NULL && list->element_count != 0) {
-                pr_err_func("program internal error\n");
-                return NULL;
+        pthread_spin_lock(&list->spinlock);
+
+        if (linklist_node_alloc(&node))
+                goto out;
+
+        if (linklist_node_init(node, NULL, NULL, element, list->element_size)) {
+                linklist_node_free(&node);
+                goto out;
         }
 
-        ret = linklist_node_alloc(&node);
-        if (ret)
-                return NULL;
-
-        ret = linklist_node_init(node, NULL, NULL,
-                                 element, list->element_size);
-        if (ret)
-                goto node_free;
-
-        data = node->data;
+        ret = node->data;
 
         if (list->head == NULL) {
                 list->head = node;
@@ -796,11 +799,9 @@ void *linklist_append(linklist *list, void *element)
         list->element_count++;
 
 out:
-        return data;
+        pthread_spin_unlock(&list->spinlock);
 
-node_free:
-        linklist_node_free(&node);
-        return NULL;
+        return ret;
 }
 
 static inline void __linklist_node_delete(linklist *list, linklist_node **n)
@@ -830,6 +831,8 @@ int linklist_delete(linklist *list, linklist_node *node)
         if (!list->head)
                 return -ENODATA;
 
+        pthread_spin_lock(&list->spinlock);
+
         if (list->head == node) {
                 next = list->head->next;
 
@@ -839,7 +842,7 @@ int linklist_delete(linklist *list, linklist_node *node)
                 if (list->head != NULL)
                         list->head->prev = NULL;
 
-                return 0;
+                goto out;
         }
 
         curr = list->head;
@@ -859,6 +862,9 @@ int linklist_delete(linklist *list, linklist_node *node)
 
                 curr = next;
         }
+
+out:
+        pthread_spin_unlock(&list->spinlock);
 
         return 0;
 }
@@ -880,6 +886,8 @@ int linklist_delete_marked(linklist *list)
 
         if (!list->head)
                 return -ENODATA;
+
+        pthread_spin_lock(&list->spinlock);
 
         while (list->head && list->head->flag_delete) {
                 next = list->head->next;
@@ -910,6 +918,8 @@ int linklist_delete_marked(linklist *list)
                 curr = next;
         }
 
+        pthread_spin_unlock(&list->spinlock);
+
         return 0;
 }
 
@@ -921,14 +931,20 @@ int linklist_delete_marked(linklist *list)
  */
 int linklist_is_empty(linklist *list)
 {
+        int ret = 0;
+
         if (!list)
                 return 1;
 
         if (!list->head)
                 return 1;
 
-        if (list->element_count == 0)
-                return 1;
+        pthread_spin_lock(&list->spinlock);
 
-        return 0;
+        if (list->element_count == 0)
+                ret = 1;
+
+        pthread_spin_unlock(&list->spinlock);
+
+        return ret;
 }
