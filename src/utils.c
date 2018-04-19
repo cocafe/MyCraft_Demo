@@ -467,6 +467,8 @@ int seqlist_init(seqlist *list, size_t element_size, size_t count)
         list->count_utilized = 0;
         list->count_expand = count;
 
+        pthread_spin_init(&list->spinlock, PTHREAD_PROCESS_PRIVATE);
+
         return 0;
 }
 
@@ -478,19 +480,30 @@ int seqlist_deinit(seqlist *list)
         if (!list->data)
                 return -ENODATA;
 
+        pthread_spin_lock(&list->spinlock);
+
         free(list->data);
+
+        pthread_spin_unlock(&list->spinlock);
+
+        pthread_spin_destroy(&list->spinlock);
+
         memzero(list, sizeof(seqlist));
 
         return 0;
 }
 
+/**
+ * seqlist_expand() - expand sequence list, internal call
+ *
+ * @param list: pointer to list
+ * @param count: element count to expand
+ * @return 0 on success
+ */
 int seqlist_expand(seqlist *list, size_t count)
 {
         void *new_data;
         size_t new_count;
-
-        if (!list)
-                return -EINVAL;
 
         new_count = list->count_allocated + count;
 
@@ -524,14 +537,19 @@ int seqlist_shrink(seqlist *list)
         if (seqlist_is_empty(list))
                 return -ENODATA;
 
+        pthread_spin_lock(&list->spinlock);
+
         new_data = realloc(list->data, list->element_size * list->count_utilized);
         if (!new_data) {
                 pr_err_alloc();
-                return -ENOMEM;
+                goto out;
         }
 
         list->data = new_data;
         list->count_allocated = list->count_utilized;
+
+out:
+        pthread_spin_unlock(&list->spinlock);
 
         return 0;
 }
@@ -541,16 +559,16 @@ int seqlist_append(seqlist *list, void *element)
         uint8_t *t;
         size_t i;
         size_t element_size;
-        int ret;
 
         if (!list || !element)
                 return -EINVAL;
 
+        pthread_spin_lock(&list->spinlock);
+
         if (list->count_utilized >= list->count_allocated) {
-                ret = seqlist_expand(list, list->count_expand);
-                if (ret) {
+                if (seqlist_expand(list, list->count_expand)) {
                         pr_err_func("failed to expand sequence list\n");
-                        return ret;
+                        goto out;
                 }
         }
 
@@ -563,23 +581,35 @@ int seqlist_append(seqlist *list, void *element)
 
         list->count_utilized++;
 
+out:
+        pthread_spin_unlock(&list->spinlock);
+
         return 0;
 }
 
 /**
  * seqlist_is_empty() - check list whether empty
  * @param list: pointer to list
- * @return 0 on success
+ * @return 1 on empty
  */
 int seqlist_is_empty(seqlist *list)
 {
+        int ret = 0;
+
         if (!list)
                 return 1;
 
-        if (list->count_utilized == 0)
+        if (!list->data)
                 return 1;
 
-        return 0;
+        pthread_spin_lock(&list->spinlock);
+
+        if (list->count_utilized == 0)
+                ret = 1;
+
+        pthread_spin_unlock(&list->spinlock);
+
+        return ret;
 }
 
 /**

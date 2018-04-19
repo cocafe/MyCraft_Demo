@@ -1,6 +1,8 @@
 #ifndef MYCRAFT_DEMO_UTIL_H
 #define MYCRAFT_DEMO_UTIL_H
 
+#include <pthread.h>
+
 #include <cglm/cglm.h>
 #include <GLFW/glfw3.h>
 
@@ -198,19 +200,20 @@ int glfwKeyReleased(GLFWwindow *window, int key);
  */
 
 typedef struct seqlist {
-        void    *data;
-        size_t  element_size;
+        void                    *data;
+        size_t                  element_size;
 
-        size_t  count_expand;
-        size_t  count_utilized;
-        size_t  count_allocated;
+        size_t                  count_expand;
+        size_t                  count_utilized;
+        size_t                  count_allocated;
+
+        pthread_spinlock_t      spinlock;
 } seqlist;
 
 int seqlist_alloc(seqlist **list);
 int seqlist_free(seqlist **list);
 int seqlist_init(seqlist *list, size_t element_size, size_t count);
 int seqlist_deinit(seqlist *list);
-int seqlist_expand(seqlist *list, size_t count);
 int seqlist_shrink(seqlist *list);
 int seqlist_append(seqlist *list, void *element);
 int seqlist_is_empty(seqlist *list);
