@@ -128,6 +128,8 @@ void ivec3_add(const ivec3 a, const ivec3 b, ivec3 dst);
 void ivec3_copy(const ivec3 src, ivec3 dst);
 float ivec3_distance(ivec3 v1, ivec3 v2);
 void vec3_round_ivec3(const vec3 src, ivec3 dst);
+void vec3_to_vec4(const vec3 src, float w, vec4 dst);
+void vec4_to_vec3(const vec4 src, vec3 dst);
 
 /**
  * Equality Test

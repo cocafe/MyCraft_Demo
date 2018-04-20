@@ -14,6 +14,21 @@
 #include "debug.h"
 #include "utils.h"
 
+extern inline void vec3_to_vec4(const vec3 src, float w, vec4 dst)
+{
+        dst[0] = src[0];
+        dst[1] = src[1];
+        dst[2] = src[2];
+        dst[3] = w;
+}
+
+extern inline void vec4_to_vec3(const vec4 src, vec3 dst)
+{
+        dst[0] = src[0];
+        dst[1] = src[1];
+        dst[2] = src[2];
+}
+
 extern inline void ivec3_add(const ivec3 a, const ivec3 b, ivec3 dst)
 {
         dst[0] = a[0] + b[0];
