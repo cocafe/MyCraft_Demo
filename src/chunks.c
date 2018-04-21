@@ -330,9 +330,17 @@ block *chunk_add_block(chunk *c, block *b)
         return ret;
 }
 
+/**
+ * chunk_del_block() - delete block by giving origin
+ *
+ * @param c: pointer to chunk
+ * @param origin_block: block origin
+ * @return 0 on success
+ */
 int chunk_del_block(chunk *c, ivec3 origin_block)
 {
         linklist_node *node;
+        int ret = 0;
 
         if (!c)
                 return -EINVAL;
@@ -344,6 +352,7 @@ int chunk_del_block(chunk *c, ivec3 origin_block)
                 pr_err_func("block (%d, %d, %d) not found in chunk (%d, %d, %d)\n",
                             origin_block[X], origin_block[Y], origin_block[Z],
                             c->origin_l[X], c->origin_l[Y], c->origin_l[Z]);
+                ret = -ENODATA;
                 goto out;
         }
 
@@ -355,7 +364,7 @@ int chunk_del_block(chunk *c, ivec3 origin_block)
 out:
         pthread_rwlock_unlock(&c->rwlock);
 
-        return 0;
+        return ret;
 }
 
 chunk *world_add_chunk(world *w, ivec3 origin_chunk)
@@ -424,6 +433,47 @@ block *world_get_block(world *w, ivec3 origin_block, int wait)
         return __world_get_block(w, origin_block, wait, 0);
 }
 
+static inline void chunk_mark_update(chunk *c)
+{
+        pthread_rwlock_wrlock(&c->rwlock);
+
+        // FIXME: This is not good, we should implement a queue
+        if (c->state != CHUNK_SCHED_UPDATE)
+                c->state = CHUNK_NEED_UPDATE;
+
+        pthread_rwlock_unlock(&c->rwlock);
+}
+
+void world_near_chunks_mark_update(world *w, ivec3 origin_b)
+{
+        ivec3 block_nrm[] = {
+                [CUBE_FRONT]    = {  0,  0,  1 },
+                [CUBE_BACK]     = {  0,  0, -1 },
+                [CUBE_TOP]      = {  0,  1,  0 },
+                [CUBE_BOTTOM]   = {  0, -1,  0 },
+                [CUBE_LEFT]     = { -1,  0,  0 },
+                [CUBE_RIGHT]    = {  1,  0,  0 },
+        };
+
+        for (int i = 0; i < CUBE_QUAD_FACES; ++i) {
+                ivec3 origin_n = { 0 };
+                ivec3 origin_c = { 0 };
+                chunk *c;
+
+                // Here, we are safe to use default normals
+                // We wanna update all chunks all block faces towards to
+                ivec3_add(origin_b, block_nrm[i], origin_n);
+
+                block_in_chunk(origin_n, w->chunk_length, origin_c);
+
+                c = world_get_chunk(w, origin_c);
+                if (!c)
+                        continue;
+
+                chunk_mark_update(c);
+        }
+}
+
 int world_add_block(world *w, block *b, int update)
 {
         ivec3 origin_chunk = { 0 };
@@ -455,8 +505,10 @@ int world_add_block(world *w, block *b, int update)
 
         chunk_add_block(c, b);
 
-        if (update)
+        if (update) {
+                world_near_chunks_mark_update(w, b->origin_l);
                 world_update_trigger(w);
+        }
 
         return 0;
 }
@@ -473,13 +525,14 @@ int world_del_block(world *w, ivec3 origin_block)
 
         c = world_get_chunk(w, origin_chunk);
         if (c == NULL) {
-                pr_err_func("internal error: chunk not found\n");
+                pr_err_func("chunk not found\n");
                 return -EFAULT;
         }
 
-        chunk_del_block(c, origin_block);
-
-        world_update_trigger(w);
+        if (!chunk_del_block(c, origin_block)) {
+                world_near_chunks_mark_update(w, origin_block);
+                world_update_trigger(w);
+        }
 
         return 0;
 }
@@ -642,8 +695,7 @@ int world_update_chunks(world *w)
         linklist_for_each_node(pos, w->chunks->head) {
                 chunk *c = pos->data;
 
-                if (pthread_rwlock_trywrlock(&c->rwlock))
-                        continue;
+                pthread_rwlock_wrlock(&c->rwlock);
 
                 if (c->state != CHUNK_NEED_UPDATE) {
                         pthread_rwlock_unlock(&c->rwlock);
