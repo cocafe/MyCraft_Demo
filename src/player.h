@@ -96,6 +96,7 @@ void player_mouse_callback(player *p, world *w, int button, int action);
 void player_scroll_callback(player *p, double offset_x, double offset_y);
 
 int player_position_set(player *p, vec3 pos);
+int player_position_show(player *p, int windows_width, int window_height);
 
 int player_hint(player *p, player *hint);
 int player_default(player *p);

@@ -983,6 +983,29 @@ int player_position_set(player *p, vec3 pos)
         return 0;
 }
 
+int player_position_show(player *p, int windows_width, int window_height)
+{
+        vec3 origin_t = { 0 };
+        ivec3 origin_b = { 0 };
+        ivec3 origin_c = { 0 };
+        char buf[256];
+
+        point_gl_to_local(p->origin_gl, BLOCK_EDGE_LEN_GLUNIT, origin_t);
+        vec3_round_ivec3(origin_t, origin_b);
+        block_in_chunk(origin_b, CHUNK_EDGE_LEN_GLUNIT, origin_c);
+
+        sprintf_s(buf, sizeof(buf),
+                  "Position: (%.4f %.4f %.4f)\n"
+                  "Block: (%d %d %d) Chunk: (%d %d %d)",
+                  p->origin_gl[X], p->origin_gl[Y], p->origin_gl[Z],
+                  origin_b[X], origin_b[Y], origin_b[Z],
+                  origin_c[X], origin_c[Y], origin_c[Z]);
+
+        text_string_draw(buf, 0, 30, 1, 1, windows_width, window_height);
+
+        return 0;
+}
+
 int player_hint(player *p, player *hint)
 {
         if (!p)
