@@ -774,7 +774,7 @@ static inline void player_fall(player *p)
 
 int player_is_on_ground(player *p, world *w)
 {
-        float dist_t = 0.01;
+        float dist_t = 0.03;
         vec3 origin_t = { 0 };
 
         glm_vec_copy(p->origin_gl, origin_t);
