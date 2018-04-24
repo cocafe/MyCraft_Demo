@@ -13,6 +13,22 @@
 #include "utils.h"
 #include "glutils.h"
 
+extern inline void glsl_color_rgba_maps(const color_rgba src, color_rgba dst)
+{
+        for (int i = 0; i < 4; ++i) {
+                dst[i] = src[i] / (float)RGB_MAX;
+        }
+}
+
+extern inline void glsl_color_rgb_maps(const color_rgb src, color_rgb dst)
+{
+        color_rgba t = { 0 };
+
+        vec3_to_vec4(src, RGB_MAX, t);
+        glsl_color_rgba_maps(t, t);
+        vec4_to_vec3(t, dst);
+}
+
 void APIENTRY opengl_debug_output_callback(GLenum source, GLenum type,
                                            GLuint id, GLenum severity,
                                            GLsizei length,

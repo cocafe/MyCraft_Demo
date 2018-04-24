@@ -47,6 +47,32 @@ typedef struct gl_attr {
         GLint   uniform_3;
 } gl_attr;
 
+typedef vec3 color_rgb;
+typedef vec4 color_rgba;
+
+#define RGB_MAX                         (255)
+#define RGB_MIN                         (0)
+
+// [0 ~ 255]
+#define RGB_WHITE                       255, 255, 255
+#define RGB_BLACK                       0,   0,   0
+#define RGB_RED                         255, 0,   0
+#define RGB_GREEN                       0,   255, 0
+#define RGB_BLUE                        0,   0,   255
+
+// [0 ~ 255] -> [0.0f ~ 1.0f]
+#define RGB_GLSL_WHITE                  1.0f, 1.0f, 1.0f
+#define RGB_GLSL_BLACK                  0.0f, 0.0f, 0.0f
+#define RGB_GLSL_RED                    1.0f, 0.0f, 0.0f
+#define RGB_GLSL_GREEN                  0.0f, 1.0f, 0.0f
+#define RGB_GLSL_BLUE                   0.0f, 0.0f, 1.0f
+
+#define RGB_COLOR(rgb)                  (color_rgb){ rgb }
+#define RGBA_COLOR(rgb, a)              (color_rgba){ rgb, a }
+
+void glsl_color_rgba_maps(const color_rgba src, color_rgba dst);
+void glsl_color_rgb_maps(const color_rgb src, color_rgb dst);
+
 void APIENTRY opengl_debug_output_callback(GLenum source, GLenum type,
                                            GLuint id, GLenum severity,
                                            GLsizei length,
