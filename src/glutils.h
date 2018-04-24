@@ -67,8 +67,8 @@ typedef vec4 color_rgba;
 #define RGB_GLSL_GREEN                  0.0f, 1.0f, 0.0f
 #define RGB_GLSL_BLUE                   0.0f, 0.0f, 1.0f
 
-#define RGB_COLOR(rgb)                  (color_rgb){ rgb }
-#define RGBA_COLOR(rgb, a)              (color_rgba){ rgb, a }
+#define RGB_COLOR(rgb)                  { rgb }
+#define RGBA_COLOR(rgb, a)              { rgb, a }
 
 void glsl_color_rgba_maps(const color_rgba src, color_rgba dst);
 void glsl_color_rgb_maps(const color_rgb src, color_rgb dst);
