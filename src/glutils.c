@@ -1265,10 +1265,31 @@ void fps_meter_measure(fps_meter *fps)
 
 void fps_meter_draw(fps_meter *fps, int fb_width, int fb_height)
 {
-        char buf[256];
+        color_rgb font_color = { 0 };
+        char buf[256] = { 0 };
 
-        sprintf_s(buf, sizeof(buf), " %d fps (%.4lf ms) ",
+        sprintf_s(buf, sizeof(buf), "%d fps (%.4lf ms)",
                   fps->fps, fps->frame_time_ms);
 
-        text_string_draw(buf, 0, 0, 1, 1, fb_width, fb_height);
+        switch (fps->fps) {
+                case 0 ... 10:
+                        glm_vec_copy((color_rgb)RGB_COLOR(RGB_RED), font_color);
+                        break;
+
+                case 11 ... 20:
+                        glm_vec_copy((color_rgb)RGB_COLOR(RGB_ORANGE), font_color);
+                        break;
+
+                case 21 ... 35:
+                        glm_vec_copy((color_rgb)RGB_COLOR(RGB_YELLOW), font_color);
+                        break;
+
+                default:
+                        glm_vec_copy((color_rgb)RGB_COLOR(RGB_WHITE), font_color);
+                        break;
+        }
+
+        glsl_color_rgb_maps(font_color, font_color);
+
+        text_string_draw(buf, 0, 0, 1, font_color, NULL, 1, fb_width, fb_height);
 }
