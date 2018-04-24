@@ -145,7 +145,7 @@ GLuint shader_compile(GLenum type, const char *source)
                 }
 
                 glGetShaderInfoLog(shader, len, NULL, msg);
-                pr_err_func("%s\n", msg);
+                pr_err_func("\n%s", msg);
                 buf_free(&msg);
         }
 
