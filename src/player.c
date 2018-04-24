@@ -1080,7 +1080,7 @@ int player_position_show(player *p, int windows_width, int window_height)
                   origin_b[X], origin_b[Y], origin_b[Z],
                   origin_c[X], origin_c[Y], origin_c[Z]);
 
-        text_string_draw(buf, 0, 24, 1, 1, windows_width, window_height);
+        text_string_draw(buf, 0, 24, 1, NULL, NULL, 1, windows_width, window_height);
 
         return 0;
 }
