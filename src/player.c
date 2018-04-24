@@ -256,74 +256,153 @@ hit_block *hit_block_nearest_get(linklist *list, ivec3 origin_p)
         return ret;
 }
 
+/**
+ * grid_raytrace_2d() - Simple raytrace on 2D grid
+ *
+ * http://playtechs.blogspot.co.uk/2007/03/raytracing-on-grid.html
+ *
+ * Handy and tricky, but imprecise at line goes though block corner case.
+ * Because our block is in another coordinate, we add block (x, y) here.
+ *
+ * @param x0: origin point x
+ * @param y0: origin point y
+ * @param x1: end point x
+ * @param y1: end point y
+ * @param o_x: origin block x
+ * @param o_y: origin block y
+ * @param ret: intersected block results
+ */
+void grid_raytrace_2d(float x0, float y0,
+                      float x1, float y1,
+                      int o_x, int o_y, linklist *ret)
+{
+        float dx = fabsf(x1 - x0);
+        float dy = fabsf(y1 - y0);
+
+        float dt_dx = 1.0f / dx;
+        float dt_dy = 1.0f / dy;
+
+        int x = (int)floorf(x0);
+        int y = (int)floorf(y0);
+
+        // Intersected grid count, sum of horizontal and vertical line crossings
+        int n = 1;
+
+        int x_inc, y_inc;
+        float t_next_vertical, t_next_horizontal;
+
+        if (float_equal(dx, 0.0f, FLT_EPSILON)) {
+                x_inc = 0;
+                t_next_horizontal = dt_dx; // inf
+        } else if (x1 > x0) {
+                x_inc = 1;
+                n += (int)floorf(x1) - x;
+                t_next_horizontal = (floorf(x0) + 1 - x0) * dt_dx;
+        } else { // x1 < x0
+                x_inc = -1;
+                n += x - (int)floorf(x1);
+                t_next_horizontal = (x0 - floorf(x0)) * dt_dx;
+        }
+
+        if (float_equal(dy, 0.0f, FLT_EPSILON)) {
+                y_inc = 0;
+                t_next_vertical = dt_dy;
+        } else if (y1 > y0) {
+                y_inc = 1;
+                n += (int)floorf(y1) - y;
+                t_next_vertical = (floorf(y0) + 1 - y0) * dt_dy;
+        } else { // y1 < y0
+                y_inc = -1;
+                n += y - (int)floorf(y1);
+                t_next_vertical = (y0 - floorf(y0)) * dt_dy;
+        }
+
+        for (; n > 0; n--) {
+                ivec3 origin_b = { 0 };
+                origin_b[X] = o_x;
+                origin_b[Z] = o_y;
+
+                linklist_append(ret, origin_b);
+
+                if (t_next_vertical < t_next_horizontal) {
+                        o_y += y_inc;
+                        t_next_vertical += dt_dy;
+                } else {
+                        o_x += x_inc;
+                        t_next_horizontal += dt_dx;
+                }
+        }
+}
+
 int player_ray_hittest(player *p, world *w, int radius)
 {
-        player_hittest *ret = &p->hittest;
+        player_hittest *hittest = &p->hittest;
+        linklist ray_blocks;
         linklist hit_blocks;
-        ivec3 point_s = { 0 };
-        ivec3 origin_s = { 0 };
-        ivec3 origin_p = { 0 };
-        vec3 origin_t = { 0 };
+        ivec3 origin_pb = { 0 };
+        vec3 point_end = { 0 };
+        vec3 t = { 0 };
 
+        linklist_init(&ray_blocks, sizeof(ivec3));
         linklist_init(&hit_blocks, sizeof(hit_block));
 
-        point_gl_to_local(p->origin_gl, BLOCK_EDGE_LEN_GLUNIT, origin_t);
-
         // Get block position we at (round to integer)
-        vec3_round_ivec3(origin_t, origin_p);
+        point_gl_to_local(p->origin_gl, BLOCK_EDGE_LEN_GLUNIT, t);
+        vec3_round_ivec3(t, origin_pb);
 
-        // Compute searching area begin point
-        ivec3_copy(origin_p, point_s);
-        point_s[X] -= radius;
-        point_s[Y] -= radius; // World height
-        point_s[Z] -= radius;
+        // Grid ray trace endpoint
+        vec3_move(p->origin_gl, p->cam.vector_front, radius, point_end);
 
-        int search_max = radius * 2;
+        // Vertically not rotated projection grid ray trace
+        grid_raytrace_2d(p->origin_gl[X], p->origin_gl[Z],
+                         point_end[X], point_end[Z],
+                         origin_pb[X], origin_pb[Z], &ray_blocks);
 
-        // FIXME: TOO many blocks to test if not return in loops
-        for (int y = 0; y < search_max; ++y) {
-                for (int x = 0; x < search_max; ++x) {
-                        for (int z = 0; z < search_max; ++z) {
-                                block *b;
-                                block_face *f;
+        int h_min = clamp(origin_pb[Y] - radius, w->height_min, w->height_max);
+        int h_max = clamp(origin_pb[Y] + radius, w->height_min, w->height_max);
 
-                                origin_s[X] = point_s[X] + x;
-                                origin_s[Y] = point_s[Y] + y;
-                                origin_s[Z] = point_s[Z] + z;
+        for (int h = h_min; h <= h_max; ++h) {
+                block *b;
+                block_face *f;
+                linklist_node *pos;
+                ivec3 origin_b = { 0 };
 
-                                // We limit the ray test space to a sphere
-                                if (!block_in_distance(origin_s, origin_p, radius))
-                                        continue;
+                linklist_for_each_node(pos, ray_blocks.head) {
+                        origin_b[X] = (*(ivec3 *)pos->data)[X];
+                        origin_b[Y] = h;
+                        origin_b[Z] = (*(ivec3 *)pos->data)[Z];
 
-                                b = world_get_block(w, origin_s, L_NOWAIT);
-                                if (b == NULL)
-                                        continue;
+                        if (!block_in_distance(origin_b, origin_pb, radius))
+                                continue;
 
-                                f = player_hittest_block_face(p, b);
-                                if (!f)
-                                        continue;
+                        b = world_get_block(w, origin_b, L_NOWAIT);
+                        if (b == NULL)
+                                continue;
 
-                                linklist_append(&hit_blocks, &(hit_block){ .b = b, .f = f });
-                        }
+                        f = player_hittest_block_face(p, b);
+                        if (!f)
+                                continue;
+
+                        linklist_append(&hit_blocks, &(hit_block){ .b = b, .f = f });
                 }
         }
 
         if (linklist_is_empty(&hit_blocks)) {
-                ret->hit = 0;
-                linklist_deinit(&hit_blocks);
-
-                return 0;
+                hittest->hit = 0;
+                goto out;
         }
 
-        hit_block *nearest = hit_block_nearest_get(&hit_blocks, origin_p);
+        hit_block *nearest = hit_block_nearest_get(&hit_blocks, origin_pb);
 
-        ret->hit = 1;
-        ret->face = nearest->f;
-        ivec3_copy(nearest->b->origin_l, ret->origin_b);
+        hittest->hit = 1;
+        hittest->face = nearest->f;
+        ivec3_copy(nearest->b->origin_l, hittest->origin_b);
 
+out:
+        linklist_deinit(&ray_blocks);
         linklist_deinit(&hit_blocks);
 
-        return 1;
+        return hittest->hit;
 }
 
 void camera_vectors_compute(camera *cam, GLFWwindow *window, double speed)
