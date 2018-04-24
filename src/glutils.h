@@ -45,6 +45,9 @@ typedef struct gl_attr {
         GLint   uniform_1;
         GLint   uniform_2;
         GLint   uniform_3;
+        GLint   uniform_4;
+        GLint   uniform_5;
+        GLint   uniform_6;
 } gl_attr;
 
 typedef vec3 color_rgb;
