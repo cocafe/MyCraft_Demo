@@ -53,15 +53,17 @@ typedef struct gl_attr {
 typedef vec3 color_rgb;
 typedef vec4 color_rgba;
 
-#define RGB_MAX                         (255)
-#define RGB_MIN                         (0)
+#define RGB_MAX                         (0xff)
+#define RGB_MIN                         (0x00)
 
 // [0 ~ 255]
-#define RGB_WHITE                       255, 255, 255
-#define RGB_BLACK                       0,   0,   0
-#define RGB_RED                         255, 0,   0
-#define RGB_GREEN                       0,   255, 0
-#define RGB_BLUE                        0,   0,   255
+#define RGB_WHITE                       0xff, 0xff, 0xff
+#define RGB_BLACK                       0x00, 0x00, 0x00
+#define RGB_RED                         0xff, 0x00, 0x00
+#define RGB_GREEN                       0x00, 0xff, 0x00
+#define RGB_BLUE                        0x00, 0x00, 0xff
+#define RGB_YELLOW                      0xff, 0xff, 0x00
+#define RGB_ORANGE                      0Xf7, 0x87, 0x57
 
 // [0 ~ 255] -> [0.0f ~ 1.0f]
 #define RGB_GLSL_WHITE                  1.0f, 1.0f, 1.0f
