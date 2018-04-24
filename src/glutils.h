@@ -113,8 +113,9 @@ int line_3d_draw(float *vertices, size_t count,
 int line_render_deinit(void);
 int line_render_init(void);
 
-int text_string_draw(const char *str, int x, int y, float scale, int background,
-                     int fb_width, int fb_height);
+int text_string_draw(const char *str, int x, int y, float scale,
+                     color_rgb color_font, color_rgb color_shadow,
+                     int background, int fb_width, int fb_height);
 int text_render_init(void);
 int text_render_deinit(void);
 

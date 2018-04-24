@@ -721,8 +721,10 @@ typedef struct text_font {
         int             texel_height;
         int             cell_width;
         int             cell_height;
-        int             char_width;
-        int             char_height;
+        int             font_width;
+        int             font_height;
+        color_rgb       color_font;
+        color_rgb       color_shadow;
         image_png       png;
         image_png       png_bg;
         GLuint          texel;
@@ -737,8 +739,10 @@ static text_font font_ubuntu = {
         .texel_height   = 512,
         .cell_width     = 32,
         .cell_height    = 32,
-        .char_width     = 12,
-        .char_height    = 24,
+        .font_width     = 12,
+        .font_height    = 24,
+        .color_font     = RGB_COLOR(RGB_WHITE),
+        .color_shadow   = { 63, 63, 63 },
 };
 
 static text_font *g_font = &font_ubuntu;
@@ -776,11 +780,11 @@ void string_vertex_generate(text_font *font, const char *str,
          *
          */
 
-        int char_w = font->char_width;
-        int char_h = font->char_height;
+        int char_w = font->font_width;
+        int char_h = font->font_height;
 
-        float char_w_scaled = font->char_width * scale;
-        float char_h_scaled = font->char_height * scale;
+        float char_w_scaled = font->font_width * scale;
+        float char_h_scaled = font->font_height * scale;
 
         int cell_cols = font->texel_width / font->cell_width;
         int cell_rows = font->texel_height / font->cell_height;
@@ -851,8 +855,9 @@ void string_vertex_generate(text_font *font, const char *str,
         seqlist_shrink(uvs);
 }
 
-int text_string_draw(const char *str, int x, int y, float scale, int background,
-                     int fb_width, int fb_height)
+int text_string_draw(const char *str, int x, int y, float scale,
+                     color_rgb color_font, color_rgb color_shadow,
+                     int background, int fb_width, int fb_height)
 {
         float screen_size[2] = { fb_width, fb_height };
         text_font *font = g_font;
@@ -880,6 +885,20 @@ int text_string_draw(const char *str, int x, int y, float scale, int background,
         glUseProgram(glattr->program);
 
         glUniform2fv(glattr->uniform_1, 1, &screen_size[0]);
+
+        glUniform3fv(glattr->uniform_2, 1, &font->color_font[0]);
+
+        if (color_font)
+                glUniform3fv(glattr->uniform_3, 1, &color_font[0]);
+        else // default font color
+                glUniform3fv(glattr->uniform_3, 1, &font->color_font[0]);
+
+        glUniform3fv(glattr->uniform_4, 1, &font->color_shadow[0]);
+
+        if (color_shadow)
+                glUniform3fv(glattr->uniform_5, 1, &color_shadow[0]);
+        else // default shadow color
+                glUniform3fv(glattr->uniform_5, 1, &font->color_shadow[0]);
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, glattr->texel);
@@ -913,6 +932,9 @@ int text_render_init(void)
         gl_attr *glattr = &font->glattr;
         int ret;
 
+        glsl_color_rgb_maps(font->color_font, font->color_font);
+        glsl_color_rgb_maps(font->color_shadow, font->color_shadow);
+
         ret = image_png32_load(&font->png, font->texel_file);
         if (ret)
                 return ret;
@@ -937,8 +959,8 @@ int text_render_init(void)
                 goto free_texel;
         }
 
-        glattr->program = program_create(SHADER_FILE("2d_polygon_vertex"),
-                                           SHADER_FILE("2d_polygon_fragment"));
+        glattr->program = program_create(SHADER_FILE("font_vertex"),
+                                         SHADER_FILE("font_fragment"));
         ret = glIsProgram(glattr->program);
         if (ret == GL_FALSE) {
                 pr_err_func("failed to load font shaders\n");
@@ -947,6 +969,10 @@ int text_render_init(void)
 
         glattr->sampler = glGetUniformLocation(font->glattr.program, "sampler");
         glattr->uniform_1 = glGetUniformLocation(font->glattr.program, "screen_size");
+        glattr->uniform_2 = glGetUniformLocation(font->glattr.program, "color_font");
+        glattr->uniform_3 = glGetUniformLocation(font->glattr.program, "color_font_r");
+        glattr->uniform_4 = glGetUniformLocation(font->glattr.program, "color_shadow");
+        glattr->uniform_5 = glGetUniformLocation(font->glattr.program, "color_shadow_r");
 
         return 0;
 
