@@ -29,6 +29,27 @@ extern inline void vec4_to_vec3(const vec4 src, vec3 dst)
         dst[2] = src[2];
 }
 
+extern inline void vec4_move(vec4 src, vec3 dir, float scale, vec4 dst)
+{
+        vec3 trans_dir = { 0 };
+        mat4 trans_mat = { 0 };
+
+        glm_vec_scale(dir, scale, trans_dir);
+        glm_translate_make(trans_mat, trans_dir);
+        glm_mat4_mulv(trans_mat, src, dst);
+}
+
+extern inline void vec3_move(vec3 src, vec3 dir, float scale, vec3 dst)
+{
+        vec4 t = { 0 };
+
+        vec3_to_vec4(src, 1, t);
+
+        vec4_move(t, dir, scale, t);
+
+        vec4_to_vec3(t, dst);
+}
+
 extern inline void ivec3_add(const ivec3 a, const ivec3 b, ivec3 dst)
 {
         dst[0] = a[0] + b[0];
