@@ -75,6 +75,13 @@ typedef struct player_hittest {
         block_face      *face;
 } player_hittest;
 
+typedef struct player_item {
+        block_attr_idx  *items;
+        int             count;
+        int             current;
+        // TODO: item type
+} player_item;
+
 typedef struct player {
         dimension               size;
         vec3                    origin_gl;
@@ -87,6 +94,7 @@ typedef struct player {
         player_hittest          hittest;
         player_speed            speed;
         player_attr             attr;
+        player_item             item;
 } player;
 
 void player_inputs_process(player *p, world *w, GLFWwindow *window);

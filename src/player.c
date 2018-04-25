@@ -76,6 +76,55 @@ static player default_player = {
 
 static timestamp player_ts;
 
+static block_attr_idx player_items[] = {
+        BLOCK_GRASS,
+        BLOCK_DIRT,
+        BLOCK_STONE,
+        BLOCK_TNT,
+        BLOCK_DEBUG,
+};
+
+static inline block_attr_idx player_item_current_get(player *p)
+{
+        return p->item.items[p->item.current];
+}
+
+void player_item_scroll(player *p, double offset_y)
+{
+        player_item *item = &p->item;
+        double threshold = 1.0f;
+
+        if (offset_y >= threshold) {
+                item->current = (item->current + 1) % item->count;
+        } else if (offset_y <= (threshold * -1)) {
+                item->current--;
+
+                if (item->current < 0)
+                        item->current = item->count - 1;
+        }
+}
+
+int player_item_draw(player *p)
+{
+        UNUSED_PARAM(p);
+
+        return 0;
+}
+
+int player_item_init(player *p)
+{
+        player_item *item = &p->item;
+
+        item->count = ARRAY_SIZE(player_items);
+        if (item->count <= 0)
+                return -EINVAL;
+
+        item->current = 0;
+        item->items = player_items;
+
+        return 0;
+}
+
 typedef struct hit_block {
         block           *b;
         block_face      *f;
@@ -992,6 +1041,7 @@ void player_action_place(player *p, world *w)
         block_face *f = hit_test->face;
         ivec3 origin_new = { 0 };
         ivec3 f_normal = { 0 };
+        block block_n;
 
         if (!hit_test->hit)
                 return;
@@ -1004,10 +1054,8 @@ void player_action_place(player *p, world *w)
         if (player_collision_test_single(p, origin_new, p->origin_gl))
                 return;
 
-        // TODO
-        block block1;
-        block_init(&block1, block_attr_get(BLOCK_DEBUG), origin_new);
-        world_add_block(w, &block1, 1);
+        block_init(&block_n, block_attr_get(player_item_current_get(p)), origin_new);
+        world_add_block(w, &block_n, 1);
 }
 
 void player_key_callback(player *p, int key, int action)
@@ -1058,7 +1106,8 @@ void player_scroll_callback(player *p, double offset_x, double offset_y)
 {
         UNUSED_PARAM(p);
         UNUSED_PARAM(offset_x);
-        UNUSED_PARAM(offset_y);
+
+        player_item_scroll(p, offset_y);
 }
 
 static inline void player_attr_update(player *p)
@@ -1089,10 +1138,13 @@ int player_position_set(player *p, vec3 pos)
 
 int player_position_show(player *p, int windows_width, int window_height)
 {
+        block_attr *blk_attr;
         vec3 origin_t = { 0 };
         ivec3 origin_b = { 0 };
         ivec3 origin_c = { 0 };
         char buf[256];
+
+        blk_attr = block_attr_get(player_item_current_get(p));
 
         point_gl_to_local(p->origin_gl, BLOCK_EDGE_LEN_GLUNIT, origin_t);
         vec3_round_ivec3(origin_t, origin_b);
@@ -1100,10 +1152,12 @@ int player_position_show(player *p, int windows_width, int window_height)
 
         sprintf_s(buf, sizeof(buf),
                   "Position: (%.4f %.4f %.4f)\n"
-                  "Block: (%d %d %d) Chunk: (%d %d %d)",
+                  "Block: (%d %d %d) Chunk: (%d %d %d)\n"
+                  "Item: %s",
                   p->origin_gl[X], p->origin_gl[Y], p->origin_gl[Z],
                   origin_b[X], origin_b[Y], origin_b[Z],
-                  origin_c[X], origin_c[Y], origin_c[Z]);
+                  origin_c[X], origin_c[Y], origin_c[Z],
+                  blk_attr->name);
 
         text_string_draw(buf, 0, 24, 1, NULL, NULL, 1, windows_width, window_height);
 
@@ -1137,6 +1191,7 @@ int player_init(player *p)
 
         timestamp_init(&player_ts);
         player_attr_update(p);
+        player_item_init(p);
 
         return 0;
 }
