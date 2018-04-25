@@ -513,7 +513,7 @@ static inline int __point_to_cube(float x, int l)
  * @param origin_l: cube local origin
  * @return 0 on cube edge.
  */
-int point_to_cube(const vec3 point_gl, int edge_len, ivec3 origin_l)
+static inline int point_to_cube(const vec3 point_gl, int edge_len, ivec3 origin_l)
 {
         if (__point_on_cube_edge(point_gl, edge_len))
                 return 0;
@@ -526,22 +526,22 @@ int point_to_cube(const vec3 point_gl, int edge_len, ivec3 origin_l)
 }
 
 /**
- * collision_test_block_point() - test a point is in a block or not
+ * collision_test_block_point() - return block origin if point is in a block
  *
- * @param point_gl: point in world space
+ * @param point_gl: point
+ * @param origin_d: local coordinate of block detected collision
  * @return 1 on collision detected
  */
-int collision_test_block_point(world *w, const vec3 point_gl)
+static inline int collision_test_block_point(const vec3 point_gl, ivec3 origin_d)
 {
         ivec3 origin_b = { 0 };
 
-        if (!point_to_cube(point_gl, BLOCK_EDGE_LEN_GLUNIT, origin_b))
+        if (!point_to_cube(point_gl, BLOCK_EDGE_LEN_GLUNIT, origin_b)) {
                 return 0;
-
-        if (world_get_block(w, origin_b, L_WAIT) != NULL)
+        } else {
+                ivec3_copy(origin_b, origin_d);
                 return 1;
-
-        return 0;
+        }
 }
 
 void player_hitbox_vertices(vec3 *vertices, const vec3 origin, dimension size)
@@ -610,12 +610,34 @@ void player_hitbox_vertices(vec3 *vertices, const vec3 origin, dimension size)
 int player_collision_test(player *p, world *w, vec3 origin_t)
 {
         vec3 test_vertices[VERTICES_COLLISION_TEST];
+        ivec3 origin_d = { 0 };
 
         player_hitbox_vertices(test_vertices, origin_t, p->size);
 
         for (int i = 0; i < VERTICES_COLLISION_TEST; ++i) {
-                if (collision_test_block_point(w, test_vertices[i]))
-                        return 1;
+                if (collision_test_block_point(test_vertices[i], origin_d)) {
+                        if (world_get_block(w, origin_d, L_WAIT))
+                                return 1;
+                }
+        }
+
+        return 0;
+}
+
+int player_collision_test_single(player *p, ivec3 origin_b, vec3 origin_t)
+{
+        vec3 test_vertices[VERTICES_COLLISION_TEST];
+        ivec3 origin_d = { 0 };
+
+        player_hitbox_vertices(test_vertices, origin_t, p->size);
+
+        for (int i = 0; i < VERTICES_COLLISION_TEST; ++i) {
+                if (collision_test_block_point(test_vertices[i], origin_d)) {
+
+                        // Same origin
+                        if (!ivec3_cmp(origin_d, origin_b))
+                                return 1;
+                }
         }
 
         return 0;
@@ -978,6 +1000,9 @@ void player_action_place(player *p, world *w)
 
         // Face normal must be normalized
         ivec3_add(hit_test->origin_b, f_normal, origin_new);
+
+        if (player_collision_test_single(p, origin_new, p->origin_gl))
+                return;
 
         // TODO
         block block1;
