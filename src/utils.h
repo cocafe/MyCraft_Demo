@@ -125,6 +125,7 @@ typedef vec3 line_vec3[VERTICES_LINE];
  */
 
 void ivec3_add(const ivec3 a, const ivec3 b, ivec3 dst);
+int ivec3_cmp(const ivec3 a, const ivec3 b);
 void ivec3_copy(const ivec3 src, ivec3 dst);
 float ivec3_distance(ivec3 v1, ivec3 v2);
 void vec3_round_ivec3(const vec3 src, ivec3 dst);

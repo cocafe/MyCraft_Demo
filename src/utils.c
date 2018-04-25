@@ -57,6 +57,16 @@ extern inline void ivec3_add(const ivec3 a, const ivec3 b, ivec3 dst)
         dst[2] = a[2] + b[2];
 }
 
+extern inline int ivec3_cmp(const ivec3 a, const ivec3 b)
+{
+        for (int i = 0; i < 3; ++i) {
+                if (a[i] != b[i])
+                        return 1;
+        }
+
+        return 0;
+}
+
 extern inline void ivec3_copy(const ivec3 src, ivec3 dst)
 {
         dst[0] = src[0];
