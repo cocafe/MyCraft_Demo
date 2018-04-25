@@ -642,7 +642,7 @@ int chunk_cull_blocks(chunk *c, world *w)
                                 if (!f->visible) {
                                         f->visible = 1;
                                         block_model_face_init(f);
-                                        block_model_face_generate(f, m, b->blk_attr, i);
+                                        block_model_face_generate(f, m, b->blk_attr, 1.0, i);
                                 }
                         } else {
                                 if (f->visible) {

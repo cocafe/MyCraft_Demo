@@ -72,11 +72,11 @@ int block_model_face_deinit(block_face *f)
 }
 
 static void block_model_face_vertex(block_face *face, block_attr *blk_attr,
-                                    const vec3 origin_gl, int face_idx)
+                                    const vec3 origin_gl, float scale, int face_idx)
 {
-        float w = blk_attr->size_model.width;
-        float h = blk_attr->size_model.height;
-        float l = blk_attr->size_model.length;
+        float w = blk_attr->size_model.width * scale;
+        float h = blk_attr->size_model.height * scale;
+        float l = blk_attr->size_model.length * scale;
         vertex_attr *v = face->vertices;
 
         switch (face_idx) {
@@ -280,8 +280,8 @@ static inline void block_model_face_normal(block_face *face, int idx)
  * @param idx: face index
  * @return 0 on success
  */
-int block_model_face_generate(block_face *f, block_model *m,
-                              block_attr *attr, int idx)
+int block_model_face_generate(block_face *f, block_model *m, block_attr *attr,
+                              float scale, int idx)
 {
         if (!f || !m || !attr)
                 return -EINVAL;
@@ -292,7 +292,7 @@ int block_model_face_generate(block_face *f, block_model *m,
         if (!f->vertices)
                 return -ENODATA;
 
-        block_model_face_vertex(f, attr, m->origin_gl, idx);
+        block_model_face_vertex(f, attr, m->origin_gl, scale, idx);
         block_model_face_vertex_normal(f, m->origin_gl);
         block_model_face_vertex_uv(f, attr, idx);
 
@@ -301,7 +301,7 @@ int block_model_face_generate(block_face *f, block_model *m,
         return 0;
 }
 
-int block_model_generate(block_model *model, block_attr *blk_attr)
+int block_model_generate(block_model *model, block_attr *blk_attr, float scale)
 {
         if (!model || !blk_attr)
                 return -EINVAL;
@@ -309,7 +309,7 @@ int block_model_generate(block_model *model, block_attr *blk_attr)
         for (int i = 0; i < CUBE_QUAD_FACES; ++i) {
                 block_face *face = &(model->faces[i]);
 
-                if (block_model_face_generate(face, model, blk_attr, i)) {
+                if (block_model_face_generate(face, model, blk_attr, scale, i)) {
                         pr_err_func("block model (%f, %f, %f) face %d failed\n",
                                     model->origin_gl[X], model->origin_gl[Y],
                                     model->origin_gl[Z], i);
