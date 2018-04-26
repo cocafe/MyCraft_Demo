@@ -798,8 +798,11 @@ int chunk_gl_attr_generate(gl_attr *glattr, block_attr *blk_dummy)
                 glattr->texel = blk_dummy->texel.texel;
         }
 
+        glattr->camera = glGetUniformLocation(glattr->program, "camera");
         glattr->sampler = glGetUniformLocation(glattr->program, "sampler");
         glattr->mat_transform = glGetUniformLocation(glattr->program, "mat_transform");
+        glattr->uniform_1 = glGetUniformLocation(glattr->program, "fog_distance");
+        glattr->uniform_2 = glGetUniformLocation(glattr->program, "fog_color");
 
         return 0;
 }
@@ -858,7 +861,7 @@ out:
         return 0;
 }
 
-int chunk_draw(chunk *c, mat4 mat_transform)
+int chunk_draw(world *w, chunk *c, vec3 camera, mat4 trans)
 {
         gl_attr *glattr;
 
@@ -879,7 +882,10 @@ int chunk_draw(chunk *c, mat4 mat_transform)
 
         glUseProgram(glattr->program);
 
-        glUniformMatrix4fv(glattr->mat_transform, 1, GL_FALSE, &mat_transform[0][0]);
+        glUniform1f(glattr->uniform_1, w->fog_distance);
+        glUniform4fv(glattr->uniform_2, 1, &w->fog_color[0]);
+        glUniform3fv(glattr->camera, 1, &camera[0]);
+        glUniformMatrix4fv(glattr->mat_transform, 1, GL_FALSE, &trans[0][0]);
 
         if (glattr->texel != GL_TEXTURE_NONE) {
                 glActiveTexture(GL_TEXTURE0);
@@ -919,10 +925,11 @@ out:
  * world_draw_chunk() - draw world by VBO indexed chunks
  *
  * @param w: pointer to world container
- * @param mat_transform: perspective transform matrix
+ * @param camera: position of camera
+ * @param trans: perspective transform matrix
  * @return 0 on success
  */
-int world_draw_chunks(world *w, mat4 mat_transform)
+int world_draw_chunks(world *w, vec3 camera, mat4 trans)
 {
         linklist_node *pos;
 
@@ -933,7 +940,7 @@ int world_draw_chunks(world *w, mat4 mat_transform)
                 chunk *c = pos->data;
 
                 chunk_flush(c);
-                chunk_draw(c, mat_transform);
+                chunk_draw(w, c, camera, trans);
         }
 
         return 0;
@@ -949,6 +956,12 @@ int world_init(world *w)
         w->chunk_length = CHUNK_EDGE_LEN_GLUNIT;
         w->height_max = WORLD_HEIGHT_MAX; /* -1 */
         w->height_min = WORLD_HEIGHT_MIN;
+
+        w->fog_distance = WORLD_FOG_DISTANCE;
+        glm_vec4_copy((vec4)WORLD_FOG_COLOR, w->fog_color);
+
+        glm_vec4_copy((vec4)WORLD_SKY_COLOR, w->sky_color);
+        glClearColor(w->sky_color[0], w->sky_color[1], w->sky_color[2], w->sky_color[3]);
 
         linklist_alloc(&w->chunks);
         linklist_init(w->chunks, sizeof(chunk));

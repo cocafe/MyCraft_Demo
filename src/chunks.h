@@ -6,6 +6,13 @@
 #include "block.h"
 #include "model.h"
 #include "utils.h"
+#include "glutils.h"
+
+#define WORLD_CLEAR_COLOR               R_G_B_A_2GLSL(160, 192, 214, 255)
+#define WORLD_SKY_COLOR                 WORLD_CLEAR_COLOR
+
+#define WORLD_FOG_COLOR                 WORLD_SKY_COLOR
+#define WORLD_FOG_DISTANCE              (64.0f)
 
 #define WORLD_HEIGHT_MAX                (BLOCK_EDGE_LEN_GLUNIT * 256)
 #define WORLD_HEIGHT_MIN                (0)
@@ -59,6 +66,11 @@ typedef struct world {
         int32_t                 chunk_length;
         linklist                *chunks;
 
+        color_rgba              sky_color;
+
+        color_rgba              fog_color;
+        float                   fog_distance;
+
         int                     update_pending;
         pthread_t               update_worker;
         pthread_cond_t          update_cond;
@@ -90,7 +102,7 @@ int world_del_block(world *w, ivec3 origin_block);
 block *world_get_block(world *w, ivec3 origin_block, int wait);
 
 int world_update_chunks(world *w);
-int world_draw_chunks(world *w, mat4 mat_transform);
+int world_draw_chunks(world *w, vec3 camera, mat4 trans);
 
 int world_update_trigger(world *w);
 
