@@ -74,6 +74,10 @@ typedef vec4 color_rgba;
 
 #define RGB_COLOR(rgb)                  { rgb }
 #define RGBA_COLOR(rgb, a)              { rgb, a }
+#define R_G_B(r, g, b)                  { (r), (g), (b) }
+#define R_G_B_A(r, g, b, a)             { (r), (g), (b), (a) }
+#define R_G_B_2GLSL(r, g, b)            { (r) / (float)RGB_MAX, (g) / (float)RGB_MAX, (b) / (float)RGB_MAX }
+#define R_G_B_A_2GLSL(r, g, b, a)       { (r) / (float)RGB_MAX, (g) / (float)RGB_MAX, (b) / (float)RGB_MAX, (a) / (float)RGB_MAX }
 
 void glsl_color_rgba_maps(const color_rgba src, color_rgba dst);
 void glsl_color_rgb_maps(const color_rgb src, color_rgb dst);
