@@ -1136,7 +1136,7 @@ int player_position_set(player *p, vec3 pos)
         return 0;
 }
 
-int player_position_show(player *p, int windows_width, int window_height)
+int player_info_draw(player *p, int windows_width, int window_height)
 {
         block_attr *blk_attr;
         vec3 origin_t = { 0 };
