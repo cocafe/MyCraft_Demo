@@ -2,249 +2,409 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <unistd.h>
 #include <memory.h>
 #include <errno.h>
+#include <math.h>
+#include <pthread.h>
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <cglm/cglm.h>
 
 #include "debug.h"
-#include "misc_helper.h"
-#include "shader_loader.h"
+#include "block.h"
+#include "utils.h"
+#include "model.h"
+#include "texel.h"
+#include "chunks.h"
+#include "player.h"
+#include "world.h"
+#include "thread.h"
+#include "mycraft.h"
 
-// Testy Triangle
-static const GLfloat g_vertex_buffer_data[] = {
-        -1.0f,-1.0f,-1.0f, // triangle 1 : begin
-        -1.0f,-1.0f, 1.0f,
-        -1.0f, 1.0f, 1.0f, // triangle 1 : end
-         1.0f, 1.0f,-1.0f, // triangle 2 : begin
-        -1.0f,-1.0f,-1.0f,
-        -1.0f, 1.0f,-1.0f, // triangle 2 : end
-         1.0f,-1.0f, 1.0f,
-        -1.0f,-1.0f,-1.0f,
-         1.0f,-1.0f,-1.0f,
-         1.0f, 1.0f,-1.0f,
-         1.0f,-1.0f,-1.0f,
-        -1.0f,-1.0f,-1.0f,
-        -1.0f,-1.0f,-1.0f,
-        -1.0f, 1.0f, 1.0f,
-        -1.0f, 1.0f,-1.0f,
-         1.0f,-1.0f, 1.0f,
-        -1.0f,-1.0f, 1.0f,
-        -1.0f,-1.0f,-1.0f,
-        -1.0f, 1.0f, 1.0f,
-        -1.0f,-1.0f, 1.0f,
-         1.0f,-1.0f, 1.0f,
-         1.0f, 1.0f, 1.0f,
-         1.0f,-1.0f,-1.0f,
-         1.0f, 1.0f,-1.0f,
-         1.0f,-1.0f,-1.0f,
-         1.0f, 1.0f, 1.0f,
-         1.0f,-1.0f, 1.0f,
-         1.0f, 1.0f, 1.0f,
-         1.0f, 1.0f,-1.0f,
-        -1.0f, 1.0f,-1.0f,
-         1.0f, 1.0f, 1.0f,
-        -1.0f, 1.0f,-1.0f,
-        -1.0f, 1.0f, 1.0f,
-         1.0f, 1.0f, 1.0f,
-        -1.0f, 1.0f, 1.0f,
-         1.0f,-1.0f, 1.0f
+static mc_config def_config = {
+        .vsync                  = VSYNC_ADAPTIVE,
+        .window_width           = PROGRAM_WINDOW_WIDTH,
+        .window_height          = PROGRAM_WINDOW_HEIGHT,
+        .fullscreen             = false,                // TODO: Fullscreen switch
+        .save_path              = "./",
+        .fov                    = FOV_NORMAL,
+        .render_dist            = 8,
+        .crosshair_show         = true,
+        .texture_filter_level   = FILTER_NEAREST,
+        .texture_mipmap_level   = 4,
+        .debug_level            = PRINT_INFO_BIT | PRINT_ERROR_BIT | PRINT_DEBUG_BIT,
+        .opengl_msaa            = 4,
 };
 
-static const GLfloat g_color_buffer_data[] = {
-        0.583f,  0.771f,  0.014f,
-        0.609f,  0.115f,  0.436f,
-        0.327f,  0.483f,  0.844f,
-        0.822f,  0.569f,  0.201f,
-        0.435f,  0.602f,  0.223f,
-        0.310f,  0.747f,  0.185f,
-        0.597f,  0.770f,  0.761f,
-        0.559f,  0.436f,  0.730f,
-        0.359f,  0.583f,  0.152f,
-        0.483f,  0.596f,  0.789f,
-        0.559f,  0.861f,  0.639f,
-        0.195f,  0.548f,  0.859f,
-        0.014f,  0.184f,  0.576f,
-        0.771f,  0.328f,  0.970f,
-        0.406f,  0.615f,  0.116f,
-        0.676f,  0.977f,  0.133f,
-        0.971f,  0.572f,  0.833f,
-        0.140f,  0.616f,  0.489f,
-        0.997f,  0.513f,  0.064f,
-        0.945f,  0.719f,  0.592f,
-        0.543f,  0.021f,  0.978f,
-        0.279f,  0.317f,  0.505f,
-        0.167f,  0.620f,  0.077f,
-        0.347f,  0.857f,  0.137f,
-        0.055f,  0.953f,  0.042f,
-        0.714f,  0.505f,  0.345f,
-        0.783f,  0.290f,  0.734f,
-        0.722f,  0.645f,  0.174f,
-        0.302f,  0.455f,  0.848f,
-        0.225f,  0.587f,  0.040f,
-        0.517f,  0.713f,  0.338f,
-        0.053f,  0.959f,  0.120f,
-        0.393f,  0.621f,  0.362f,
-        0.673f,  0.211f,  0.457f,
-        0.820f,  0.883f,  0.371f,
-        0.982f,  0.099f,  0.879f
-};
+static mc_program def_program;
+mc_program *g_program = &def_program;
 
-int main(const int argc, const char *argv[])
+int mc_config_init()
 {
-        GLFWwindow *window;
+        // TODO: Read configs from disk
+        return 0;
+}
 
-        // GLFW init
+int mc_program_init(mc_program *program, mc_config *config)
+{
+        if (!program || !config)
+                return -EINVAL;
+
+        memset(program, 0x00, sizeof(mc_program));
+
+        memcpy(&program->config, config, sizeof(mc_config));
+
+        program->window_width = config->window_width;
+        program->window_height = config->window_height;
+
+        return 0;
+}
+
+void mc_program_key_callback(mc_program *program, int key, int action)
+{
+        switch (key) {
+                case GLFW_KEY_ESCAPE:
+                        if (action == GLFW_PRESS)
+                                program->state = PROGRAM_EXIT;
+
+                        break;
+
+                case GLFW_KEY_KP_3:
+                        if (action == GLFW_PRESS) {
+                                world_update_trigger(&program->mc_world);
+                        }
+                        break;
+
+                case GLFW_KEY_G:
+                        if (action == GLFW_PRESS) {
+                                int t = program->mc_player.attr.fly_noclip;
+                                program->mc_player.attr.fly_noclip = !t;
+                        }
+                        break;
+
+                default:
+                        break;
+        }
+}
+
+int glfw_init(void)
+{
         if (!glfwInit()) {
-                return EXIT_FAILURE;
+                pr_err_func("failed to init GLFW\n");
+                return -EFAULT;
         }
 
-        // GLFW window option: MSAA
-        glfwWindowHint(GLFW_SAMPLES, 4);
+        return 0;
+}
 
-        // GLFW OpenGL context options
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+void glfw_deinit(void)
+{
+        glfwTerminate();
+}
+
+void glfw_window_close_callback(GLFWwindow *window)
+{
+        UNUSED_PARAM(window);
+
+        g_program->state = PROGRAM_EXIT;
+}
+
+void glfw_window_focus_callback(GLFWwindow *window, int focus)
+{
+        UNUSED_PARAM(window);
+
+        if (focus == GLFW_TRUE) {
+                g_program->focus = 1;
+                g_program->state = PROGRAM_RUNNING;
+        } else {
+                g_program->focus = 0;
+                g_program->state = PROGRAM_PAUSE;
+        }
+}
+
+void glfw_key_input_callback(GLFWwindow *window, int key,
+                             int scancode, int action, int mods)
+{
+        UNUSED_PARAM(window);
+        UNUSED_PARAM(scancode);
+        UNUSED_PARAM(mods);
+
+        if (g_program->state != PROGRAM_RUNNING)
+                return;
+
+        mc_program_key_callback(g_program, key, action);
+        player_key_callback(&g_program->mc_player, key, action);
+}
+
+void glfw_mouse_input_callback(GLFWwindow *window, int button,
+                               int action, int mods)
+{
+        UNUSED_PARAM(window);
+        UNUSED_PARAM(mods);
+
+        player_mouse_callback(&g_program->mc_player, &g_program->mc_world,
+                              button, action);
+}
+
+void glfw_scroll_input_callback(GLFWwindow *window, double xoffset, double yoffset)
+{
+        UNUSED_PARAM(window);
+
+        player_scroll_callback(&g_program->mc_player, xoffset, yoffset);
+}
+
+void glfw_window_resize_callback(GLFWwindow *window, int width, int height)
+{
+        UNUSED_PARAM(window);
+
+        glViewport(0, 0, width, height);
+
+        g_program->window_width = width;
+        g_program->window_height = height;
+}
+
+int glfw_window_init(GLFWwindow **window, int width, int height, int msaa, int vsync)
+{
+        glfwWindowHint(GLFW_SAMPLES, msaa);
+
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, OPENGL_API_MAJOR);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, OPENGL_API_MINOR);
         glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-        // GLFW create window
-        window = glfwCreateWindow(1280, 720, "MyCraft Demo", NULL, NULL);
-        if (!window) {
-                glfwTerminate();
-                return EXIT_FAILURE;
+        *window = glfwCreateWindow(width, height, PROGRAM_WINDOW_TITLE, NULL, NULL);
+        if (!*window) {
+                pr_err_func("failed to create render window\n");
+                return -EFAULT;
         }
 
-        // GLFW make OpenGL context
-        glfwMakeContextCurrent(window);
+        // TODO: Set windows to monitor center
 
-        // GLEW init
-        glewExperimental = true;
-        if (glewInit() != GLEW_OK) {
-                glfwTerminate();
-                return EXIT_FAILURE;
-        }
+        glfwMakeContextCurrent(*window);
 
-        // GLFW window input options
-        glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
-        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        glfwSetCursorPos(window, 1280 / 2, 720 / 2);
-
-        // GLFW flush unhandled events
-        glfwPollEvents();
-
-        // GLFW window vsync settings:
-        //      -1: auto
-        //      1: on
-        //      0: off
-        glfwSwapInterval(-1);
-
-        // OpenGL background color: RGBA
-        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-
-        // OpenGL hardware Z-Buffer
-        glEnable(GL_DEPTH_TEST);
-        // Accept fragment if it's closer to camera then the former one
-        glDepthFunc(GL_LESS);
-
-        // VAO
-        GLuint vertex_array_id;
-        glGenVertexArrays(1, &vertex_array_id);
-        glBindVertexArray(vertex_array_id);
-
-        // Mesh vertex buffer
-        GLuint vertex_buffer;
-        glGenBuffers(1, &vertex_buffer);
-        glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data),
-                     g_vertex_buffer_data, GL_STATIC_DRAW);
-
-        // Mesh color buffer
-        GLuint color_buffer;
-        glGenBuffers(1, &color_buffer);
-        glBindBuffer(GL_ARRAY_BUFFER, color_buffer);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(g_color_buffer_data),
-                     g_color_buffer_data, GL_STATIC_DRAW);
-
-        // Compile GLSL shaders
-        GLuint shader_program_id;
-        if (shaders_load(&shader_program_id,
-                     "resource/shaders/dummy_vertex_shader.glsl",
-                     "resource/shaders/dummy_fragment_shader.glsl") != GL_TRUE)
-                goto free_buffers;
-
-        // Variable will be pass to GLSL
-        GLint MVP_uniform = glGetUniformLocation(shader_program_id, "MVP");
-
-        mat4 mat_trans = {0};
-        glm_mat4_identity(mat_trans);
-
-        vec3 vec_trans = { 0.0f, 0.0f, -3.0f };
-        glm_translate(mat_trans, vec_trans);
-        glm_mat4_print(mat_trans, stdout);
-        fflush(stdout);
-
-        mat4 mat_model = {0};
-        glm_mat4_identity(mat_model);
-        glm_mat4_print(mat_model, stdout);
-        fflush(stdout);
-
-        mat4 mat_camera = {0};
-        glm_lookat((vec3){ 4, 3, 3 }, (vec3){ 0, 0, 0 }, (vec3){ 0, 1, 0 }, mat_camera);
-        glm_mat4_print(mat_camera, stdout);
-        fflush(stdout);
-
-        mat4 mat_project = {0};
-        glm_perspective(96.0f, 16.0f / 9.0f, 0.1f, 100.0f, mat_project);
-        glm_mat4_print(mat_project, stdout);
-        fflush(stdout);
-
-        mat4 mat_mvp = {0};
-        glm_mat4_mulN((mat4 *[]){&mat_project, &mat_camera, &mat_model, &mat_trans}, 4, mat_mvp);
-
-        glm_mat4_print(mat_mvp, stdout);
-        fflush(stdout);
-
-        do {
-                // Clear the screen
-                glClear(GL_COLOR_BUFFER_BIT |
-                        GL_DEPTH_BUFFER_BIT |
-                        GL_STENCIL_BUFFER_BIT);
-
-                // Use our shader program during rendering
-                glUseProgram(shader_program_id);
-
-                // Send MVP matrix to GLSL
-                glUniformMatrix4fv(MVP_uniform, 1, GL_FALSE, &mat_mvp[0][0]);
-
-                // Attribute 0 passes to GLSL: vertices
-                glEnableVertexAttribArray(0);
-                glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
-                glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
-
-                // Attribute 1 passes to GLSL: color
-                glEnableVertexAttribArray(1);
-                glBindBuffer(GL_ARRAY_BUFFER, color_buffer);
-                glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
-
-                glDrawArrays(GL_TRIANGLES, 0, (6 * 2) * 3);
-
-                glDisableVertexAttribArray(0);
-
-                glfwSwapBuffers(window);
-                glfwPollEvents();
-        } while((glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS) &&
-                (glfwWindowShouldClose(window) == false));
-
-        glDeleteProgram(shader_program_id);
-free_buffers:
-        glDeleteBuffers(1, &vertex_buffer);
-        glDeleteVertexArrays(1, &vertex_array_id);
-
-free_glfw:
-        glfwTerminate();
+        glfwSwapInterval(vsync);
 
         return 0;
+}
+
+void glfw_input_init(GLFWwindow *window)
+{
+        int width;
+        int height;
+
+        glfwGetWindowSize(window, &width, &height);
+
+        glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        glfwSetCursorPos(window, width / 2.0, height / 2.0);
+}
+
+void glfw_callback_init(GLFWwindow *window)
+{
+        glfwSetKeyCallback(window, glfw_key_input_callback);
+        glfwSetScrollCallback(window, glfw_scroll_input_callback);
+        glfwSetMouseButtonCallback(window, glfw_mouse_input_callback);
+
+        glfwSetWindowFocusCallback(window, glfw_window_focus_callback);
+        glfwSetWindowCloseCallback(window, glfw_window_close_callback);
+        glfwSetWindowSizeCallback(window, glfw_window_resize_callback);
+}
+
+int glew_init(void)
+{
+        glewExperimental = true;
+        if (glewInit() != GLEW_OK) {
+                pr_err_func("failed to init GLEW\n");
+                return -EFAULT;
+        }
+
+        return 0;
+}
+
+void opengl_extension(void)
+{
+        if (GLEW_ARB_debug_output) {
+                pr_debug_func("Enable GL_ARB_DEBUG_OUTPUT extension\n");
+                glDebugMessageCallbackARB(&opengl_debug_output_callback, NULL);
+//                glEnable(GL_DEBUG_OUTPUT);
+        }
+}
+
+void opengl_set(void)
+{
+        glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
+
+        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_DEPTH_BUFFER_BIT);
+        glClear(GL_STENCIL_BUFFER_BIT);
+
+        glFrontFace(GL_CW);
+
+//        glEnable(GL_CULL_FACE);
+
+        glDisable(GL_LINE_SMOOTH);
+
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LESS);
+
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+}
+
+int main(const int argc, const char *argv[])
+{
+        mc_program *program = &def_program;
+        player *mc_player = &program->mc_player;
+        world *mc_world = &program->mc_world;
+        int ret;
+
+        // Cmdline process
+
+        if (argc > 1) {
+                pr_debug_func("cmdline: ");
+                for (int i = 1; i < argc; ++i) {
+                        pr_debug("%s ", argv[i]);
+                }
+                pr_debug("\n");
+        }
+
+        // Program config init
+
+        mc_program_init(program, &def_config);
+
+        // GLFW init
+
+        ret = glfw_init();
+        if (ret) {
+                goto out;
+        }
+
+        ret = glfw_window_init(&program->window,
+                               program->window_width,
+                               program->window_height,
+                               program->config.opengl_msaa,
+                               program->config.vsync);
+        if (ret) {
+                goto out_glfw;
+        }
+
+        glfw_input_init(program->window);
+        glfw_callback_init(program->window);
+
+        program->focus = 1;
+        program->state = PROGRAM_RUNNING;
+
+        // TODO: GLFW set window to monitor center
+
+        // GLEW init
+
+        ret = glew_init();
+        if (ret) {
+                goto out_glfw;
+        }
+
+        // OpenGL init
+
+        opengl_set();
+        opengl_extension();
+
+        program->VAO = vertex_array_create();
+        if (glIsVertexArray(program->VAO) == GL_FALSE) {
+                pr_err_func("failed to init OpenGL VAO\n");
+                goto out_glfw;
+        }
+
+        // Resources init
+
+        ret = texel_pack_init();
+        if (ret)
+                goto out_vao;
+
+        ret = block_shader_init();
+        if (ret) {
+                goto out_texel_pack;
+        }
+
+        ret = block_attr_init();
+        if (ret) {
+                goto out_block_shader;
+        }
+
+        fps_meter_init(&program->fps);
+
+        player_default(mc_player);
+        player_init(mc_player);
+
+        line_render_init();
+        text_render_init();
+        thread_helper_init();
+        crosshair_textured_init();
+
+        world_init(mc_world);
+
+        super_flat_generate(mc_world, SUPER_FLAT_GRASS, 128, 128);
+        player_position_set(mc_player, (vec3){ 0, 0, 5 });
+
+        do {
+                // Global clear call for next frame
+                glClear(GL_COLOR_BUFFER_BIT);
+                glClear(GL_DEPTH_BUFFER_BIT);
+
+                player_inputs_process(mc_player, mc_world, program->window);
+
+                world_draw_chunks(mc_world, mc_player->cam.position, mc_player->cam.mat_transform);
+
+                if (mc_player->hittest.hit) {
+                        block_wireframe_draw(mc_player->hittest.origin_b,
+                                             (color_rgba)RGBA_COLOR(RGB_GLSL_BLACK, 0.6),
+                                             0, mc_player->cam.mat_transform);
+                }
+
+                glClear(GL_DEPTH_BUFFER_BIT);
+                fps_meter_count(&program->fps);
+                fps_meter_measure(&program->fps);
+                fps_meter_draw(&program->fps,
+                               program->window_width,
+                               program->window_height);
+
+                player_info_draw(mc_player,
+                                 program->window_width,
+                                 program->window_height);
+
+                crosshair_textured_draw(1.0f, program->window_width,
+                                        program->window_height);
+
+                glfwSwapBuffers(program->window);
+                glfwPollEvents();
+        } while(program->state != PROGRAM_EXIT);
+
+        crosshair_textured_deinit();
+        text_render_deinit();
+        line_render_deinit();
+        thread_helper_deinit();
+
+        world_deinit(mc_world);
+        player_deinit(mc_player);
+
+        block_attr_deinit();
+
+out_block_shader:
+        block_shader_deinit();
+
+out_texel_pack:
+        texel_pack_deinit();
+
+out_vao:
+        vertex_array_delete(&program->VAO);
+
+out_glfw:
+        glfw_deinit();
+
+out:
+        // Wait for threads
+//        pthread_exit(NULL);
+
+        return ret;
 }

@@ -54,7 +54,8 @@ set(SOURCE_FILES
         src/chunks.c
         src/chunks.h
         src/thread.c
-        src/thread.h)
+        src/thread.h
+        src/mycraft.h)
 
 set(LIB_SOURCE_FILES
         lib/lodepng.c
