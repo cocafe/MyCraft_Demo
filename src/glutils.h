@@ -37,6 +37,7 @@ typedef struct gl_attr {
         GLuint  vertex_nrm;     // buffer
         GLsizei vertex_count;
         GLuint  texel;          // texture
+        GLint   camera;         // uniform
         GLint   sampler;        // uniform
         GLint   mat_transform;  // uniform
         GLuint  buffer_1;
