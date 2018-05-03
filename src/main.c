@@ -348,7 +348,7 @@ int main(const int argc, const char *argv[])
         world_update_chunks(mc_world, 0);
         world_worker_create(mc_world);
 
-        player_position_set(mc_player, (vec3){ 0, 0, 5 });
+        player_position_set(mc_player, (vec3){ 32, 10, 32 });
 
         do {
                 // Global clear call for next frame
