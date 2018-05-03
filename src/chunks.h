@@ -101,10 +101,11 @@ int world_add_block(world *w, block *b, int update);
 int world_del_block(world *w, ivec3 origin_block);
 block *world_get_block(world *w, ivec3 origin_block, int wait);
 
-int world_update_chunks(world *w);
+int world_update_chunks(world *w, int detach);
 int world_draw_chunks(world *w, vec3 camera, mat4 trans);
 
 int world_update_trigger(world *w);
+int world_worker_create(world *w);
 
 int world_init(world *w);
 int world_deinit(world *w);

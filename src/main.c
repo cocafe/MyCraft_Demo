@@ -345,6 +345,9 @@ int main(const int argc, const char *argv[])
         world_init(mc_world);
 
         super_flat_generate(mc_world, SUPER_FLAT_GRASS, 128, 128);
+        world_update_chunks(mc_world, 0);
+        world_worker_create(mc_world);
+
         player_position_set(mc_player, (vec3){ 0, 0, 5 });
 
         do {

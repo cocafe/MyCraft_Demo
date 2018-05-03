@@ -680,17 +680,20 @@ void *chunk_update_worker(void *data)
         return NULL;
 }
 
-int world_update_chunks(world *w)
+int world_update_chunks(world *w, int detach)
 {
         typedef struct {
                 world *w;
                 chunk *c;
         } thread_arg;
 
+        linklist chunk_workers;
         linklist_node *pos;
 
         if (!w)
                 return -EINVAL;
+
+        linklist_init(&chunk_workers, sizeof(pthread_t));
 
         linklist_for_each_node(pos, w->chunks->head) {
                 chunk *c = pos->data;
@@ -710,8 +713,24 @@ int world_update_chunks(world *w)
                 arg->w = w;
                 arg->c = c;
 
-                pthread_create_detached(chunk_update_worker, arg);
+                if (detach) {
+                        pthread_create_detached(chunk_update_worker, arg);
+                } else {
+                        pthread_t t = pthread_create_joinable(chunk_update_worker, arg);
+                        linklist_append(&chunk_workers, &t);
+                }
+
         }
+
+        // Block and wait for all workers to finish
+        if (!detach) {
+                linklist_for_each_node(pos, chunk_workers.head) {
+                        pthread_t *t = (pthread_t *)pos->data;
+                        pthread_join(*t, NULL);
+                }
+        }
+
+        linklist_deinit(&chunk_workers);
 
         return 0;
 }
@@ -735,7 +754,7 @@ void *world_chunks_worker(void *data)
                 if (g_program->state == PROGRAM_EXIT)
                         break;
 
-                world_update_chunks(w);
+                world_update_chunks(w, 1);
 
                 pthread_spin_lock(&w->update_spin);
                 if (w->update_pending > 0)
@@ -946,6 +965,16 @@ int world_draw_chunks(world *w, vec3 camera, mat4 trans)
         return 0;
 }
 
+int world_worker_create(world *w)
+{
+        if (!w)
+                return -EINVAL;
+
+        w->update_worker = pthread_create_joinable(world_chunks_worker, w);
+
+        return 0;
+}
+
 int world_init(world *w)
 {
         if (!w)
@@ -969,8 +998,6 @@ int world_init(world *w)
         pthread_spin_init(&w->update_spin, PTHREAD_PROCESS_PRIVATE);
         pthread_mutex_init(&w->update_mutex, NULL);
         pthread_cond_init(&w->update_cond, NULL);
-
-        w->update_worker = pthread_create_joinable(world_chunks_worker, w);
 
         return 0;
 }

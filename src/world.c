@@ -98,8 +98,6 @@ int super_flat_generate(world *w, super_flat_preset_idx idx, int width, int leng
                 }
         }
 
-        world_update_trigger(w);
-
         memfree((void **)&b);
 
         return 0;
