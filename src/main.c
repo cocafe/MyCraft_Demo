@@ -24,7 +24,7 @@
 #include "mycraft.h"
 
 static mc_config def_config = {
-        .vsync                  = VSYNC_ADAPTIVE,
+        .vsync                  = VSYNC_DISABLED,
         .window_width           = PROGRAM_WINDOW_WIDTH,
         .window_height          = PROGRAM_WINDOW_HEIGHT,
         .fullscreen             = false,                // TODO: Fullscreen switch
